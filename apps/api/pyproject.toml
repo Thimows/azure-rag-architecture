@@ -1,9 +1,14 @@
 [project]
 name = "api"
 version = "0.1.0"
-description = "Add your description here"
+description = "Enterprise RAG Architecture — FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "fastapi[standard]>=0.128.8",
+    "openai>=1.0.0",
+    "azure-search-documents>=11.4.0",
+    "azure-ai-formrecognizer>=3.3.0",
+    "azure-storage-blob>=12.19.0",
+    "pydantic-settings>=2.0.0",
 ]

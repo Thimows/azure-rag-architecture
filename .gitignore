@@ -51,6 +51,17 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!terraform.tfvars.example
+.terraform.lock.hcl
+
+# Databricks
+.databricks/
+
 # Misc
 .DS_Store
 *.pem

@@ -1,0 +1,106 @@
+bundle:
+  name: rag-ingestion
+
+include:
+  - ./config/*.yml
+
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+resources:
+  jobs:
+    document_ingestion_job:
+      name: "[${bundle.target}] RAG Document Ingestion"
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: UTC
+        pause_status: PAUSED
+      job_clusters:
+        - job_cluster_key: ingestion_cluster
+          new_cluster:
+            spark_version: "13.3.x-scala2.12"
+            node_type_id: Standard_DS3_v2
+            num_workers: 2
+            spark_conf:
+              spark.databricks.delta.preview.enabled: "true"
+            custom_tags:
+              project: rag-ingestion
+              environment: ${bundle.target}
+      tasks:
+        - task_key: parse_documents
+          job_cluster_key: ingestion_cluster
+          notebook_task:
+            notebook_path: ./notebooks/01_document_parsing.py
+            source: WORKSPACE
+          libraries:
+            - pypi:
+                package: azure-ai-formrecognizer>=3.3.0
+            - pypi:
+                package: azure-storage-blob>=12.19.0
+          timeout_seconds: 3600
+
+        - task_key: chunk_documents
+          depends_on:
+            - task_key: parse_documents
+          job_cluster_key: ingestion_cluster
+          notebook_task:
+            notebook_path: ./notebooks/02_chunking.py
+            source: WORKSPACE
+          libraries:
+            - pypi:
+                package: tiktoken>=0.7.0
+          timeout_seconds: 1800
+
+        - task_key: generate_embeddings
+          depends_on:
+            - task_key: chunk_documents
+          job_cluster_key: ingestion_cluster
+          notebook_task:
+            notebook_path: ./notebooks/03_embedding_generation.py
+            source: WORKSPACE
+          libraries:
+            - pypi:
+                package: openai>=1.0.0
+          timeout_seconds: 7200
+
+        - task_key: index_documents
+          depends_on:
+            - task_key: generate_embeddings
+          job_cluster_key: ingestion_cluster
+          notebook_task:
+            notebook_path: ./notebooks/04_indexing.py
+            source: WORKSPACE
+          libraries:
+            - pypi:
+                package: azure-search-documents>=11.4.0
+          timeout_seconds: 3600
+
+    create_search_index_job:
+      name: "[${bundle.target}] Create/Update Search Index"
+      job_clusters:
+        - job_cluster_key: utility_cluster
+          new_cluster:
+            spark_version: "13.3.x-scala2.12"
+            node_type_id: Standard_DS3_v2
+            num_workers: 0
+            spark_conf:
+              spark.master: "local[*]"
+      tasks:
+        - task_key: create_index
+          job_cluster_key: utility_cluster
+          notebook_task:
+            notebook_path: ./notebooks/00_create_search_index.py
+            source: WORKSPACE
+          libraries:
+            - pypi:
+                package: azure-search-documents>=11.4.0
+          timeout_seconds: 300
+
+targets:
+  dev:
+    mode: development
+    default: true
+  staging:
+    mode: development
+  prod:
+    mode: production

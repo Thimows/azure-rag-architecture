@@ -419,33 +419,54 @@ Key components:
 
 ## Implementation Roadmap
 
-### Phase 1: Foundation
+### Phase 1: Foundation ✅ COMPLETE
 
 **Goal**: Infrastructure, project scaffold, basic integrations
 
-| Task | Details |
-|------|---------|
-| Terraform IaC | Resource group, Azure OpenAI (GPT-5.3 + embeddings), Azure AI Search, Document Intelligence, Storage Account, RBAC |
-| Monorepo setup | Turborepo tasks, shared configs, pre-commit hooks. Add FastAPI dev command to `turbo.json` so `npm run dev` starts both web and API concurrently |
-| FastAPI scaffold | App entry, Pydantic settings, Azure SDK clients, health check, CORS, logging. Add `dev` script to `apps/api/package.json` (or Turbo task) that runs `uvicorn` |
-| Next.js scaffold | App Router, Tailwind CSS, basic chat layout, env vars |
+| Task | Status | Details |
+|------|--------|---------|
+| Terraform IaC | ✅ Done | Resource group, Azure OpenAI (GPT-5.3 + embeddings), Azure AI Search, Document Intelligence, Storage Account — modular setup in `terraform/` with 4 modules |
+| Monorepo setup | ✅ Done | `apps/api/package.json` added with `dev` script so `npm run dev` starts both Next.js and FastAPI concurrently via Turborepo |
+| FastAPI scaffold | ✅ Done | App entry with CORS, Pydantic settings, Azure SDK client factories, routers (health, chat, documents) under `/api/v1`, `.env.example` |
+| Next.js scaffold | ✅ Done | Tailwind CSS v4 with `@tailwindcss/postcss`, chat layout skeleton with header/message area/input bar, dark mode support, `.env.example` |
 
-**Deliverables**: All Azure resources provisioned, `npm run dev` works, `/health` endpoint live
+**Deliverables**: All Azure resources defined in Terraform, `npm run dev` starts both apps, `/api/v1/health` endpoint returns `{"status": "healthy"}`, basic chat UI shell at `localhost:3000`
 
 ---
 
-### Phase 2: Ingestion Pipeline
+### Phase 1.5: Provision Infrastructure
 
-**Goal**: Databricks pipeline for document processing
+**Goal**: Actually run Terraform and Databricks deployments so Azure resources and Databricks jobs exist
 
 | Task | Details |
 |------|---------|
-| Databricks workspace | Cluster config, libraries, secrets |
-| Document parsing | Azure Document Intelligence SDK, PDF/Word support, layout extraction |
-| Chunking strategies | Semantic + structure-aware + sliding window, configurable overlap |
-| Embedding generation | Batch embedding, rate limiting, retry logic, dimension validation |
-| Azure AI Search indexing | Define schema, configure HNSW + semantic, batch upload |
-| Databricks Asset Bundles | `databricks.yml` with job definitions, task dependencies |
+| Provision Azure resources | `cd terraform && cp terraform.tfvars.example terraform.tfvars` → edit with your subscription/config → `terraform init && terraform apply` |
+| Configure `.env` files | Copy Terraform outputs into `apps/api/.env` and `apps/web/.env.local` |
+| Create Databricks secrets scope | `databricks secrets create-scope rag-ingestion` → populate secrets from Terraform outputs |
+| Deploy Databricks bundle | `cd databricks && databricks bundle deploy --target dev` |
+| Verify | Azure Portal shows all resources, Databricks workspace has the ingestion jobs |
+
+> **Note**: This step requires an Azure subscription and Databricks workspace. Skip until you're ready to test end-to-end.
+
+**Deliverables**: Live Azure resources (OpenAI, AI Search, Storage, Document Intelligence), Databricks jobs deployed and ready to run
+
+---
+
+### Phase 2: Ingestion Pipeline ✅ COMPLETE
+
+**Goal**: Databricks pipeline for document processing
+
+| Task | Status | Details |
+|------|--------|---------|
+| Databricks utilities | ✅ Done | Client factories using `dbutils.secrets`, chunking strategies (semantic, structure-aware, sliding window with tiktoken), quality validation checks in `databricks/utils/` |
+| Document parsing notebook | ✅ Done | `01_document_parsing.py` — Azure Document Intelligence `prebuilt-layout`, PDF/DOCX/TXT support, Delta table `rag_ingestion.parsed_documents` |
+| Chunking notebook | ✅ Done | `02_chunking.py` — Widget-selectable strategy, deterministic chunk IDs, quality validation, Delta table `rag_ingestion.chunks` |
+| Embedding generation notebook | ✅ Done | `03_embedding_generation.py` — Batch of 100, exponential backoff retry, 3072-dim validation, Delta table `rag_ingestion.chunks_with_embeddings` |
+| Azure AI Search index setup | ✅ Done | `00_create_search_index.py` — 9 fields, HNSW vector search (cosine, 3072-dim), semantic ranking config, idempotent `create_or_update_index` |
+| Search indexing notebook | ✅ Done | `04_indexing.py` — Batch upsert via `merge_or_upload_documents`, per-document error tracking |
+| Databricks Asset Bundles | ✅ Done | `databricks.yml` with 2 jobs, 4 sequential tasks with dependencies, 3 targets (dev/staging/prod) with cluster overrides |
+| Document upload API | ✅ Done | `POST /documents/upload` (PDF/DOCX/TXT, 50MB max, Blob Storage), `GET /documents` (list blobs), Pydantic models in `document_models.py` |
+| Bug fixes | ✅ Done | Fixed `get_document_analysis_client` credentials, added missing settings fields, updated `.env.example` |
 
 **Deliverables**: End-to-end ingestion job, sample documents indexed and searchable
 
