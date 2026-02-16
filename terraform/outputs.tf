@@ -23,6 +23,10 @@ output "azure_ai_embedding_deployment" {
   value = module.ai_foundry.embedding_deployment_name
 }
 
+output "azure_ai_project_name" {
+  value = module.ai_foundry.project_name
+}
+
 output "azure_search_endpoint" {
   value = module.azure_search.endpoint
 }

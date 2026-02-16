@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.9,<3.14"
 dependencies = [
     "fastapi[standard]>=0.128.8",
-    "anthropic>=0.40.0",
     "azure-ai-inference>=1.0.0b6",
     "azure-search-documents>=11.4.0",
     "azure-ai-formrecognizer>=3.3.0",

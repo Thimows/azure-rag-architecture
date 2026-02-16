@@ -9,12 +9,6 @@ variable "location" {
   default     = "swedencentral"
 }
 
-variable "chat_model_name" {
-  description = "Name of the chat model to deploy"
-  type        = string
-  default     = "claude-sonnet-4-5"
-}
-
 variable "embedding_model_name" {
   description = "Name of the embedding model to deploy"
   type        = string
@@ -37,3 +31,4 @@ variable "project_prefix" {
   type        = string
   default     = "rag"
 }
+

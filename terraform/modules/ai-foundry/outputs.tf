@@ -18,3 +18,7 @@ output "chat_deployment_name" {
 output "embedding_deployment_name" {
   value = var.embedding_deployment_name
 }
+
+output "project_name" {
+  value = azurerm_cognitive_account_project.project.name
+}

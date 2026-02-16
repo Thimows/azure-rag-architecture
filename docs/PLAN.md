@@ -1,6 +1,6 @@
 # Enterprise RAG Architecture
 
-> A production-grade, enterprise-ready Retrieval-Augmented Generation (RAG) system showcasing best practices for building transparent, citation-based AI applications with Azure AI Foundry (Claude Sonnet 4.5), Azure AI Search, and Databricks.
+> A production-grade, enterprise-ready Retrieval-Augmented Generation (RAG) system showcasing best practices for building transparent, citation-based AI applications with Azure AI Foundry (Kimi K2.5), Azure AI Search, and Databricks.
 
 ## Purpose
 
@@ -96,7 +96,7 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 | **Azure AI Search** | Vector + keyword + semantic hybrid search, filtering, index management |
 | **FastAPI Backend** | Query understanding, retrieval orchestration, cross-encoder reranking, answer generation with citations, streaming responses |
 | **Next.js Frontend** | Chat interface, markdown streaming (Streamdown), citation bubbles, source highlighting, document viewer |
-| **Azure AI Foundry** | Chat completions (Claude Sonnet 4.5), text embeddings (`text-embedding-3-large`), evaluation (LLM-as-judge) |
+| **Azure AI Foundry** | Chat completions (Kimi K2.5), text embeddings (`text-embedding-3-large`), evaluation (LLM-as-judge) |
 | **Terraform** | Infrastructure provisioning, resource management, reproducible deployments |
 
 ---
@@ -120,7 +120,7 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 | **FastAPI** | 0.128+ | High-performance async Python framework with OpenAPI docs |
 | **Python** | 3.9+ | Azure SDK compatibility, async/await |
 | **UV** | Latest | Fast Python package manager |
-| **Anthropic SDK** | Latest | Claude Sonnet 4.5 via Azure AI Foundry |
+| **Azure AI Inference SDK** | Latest | Kimi K2.5 (Moonshot AI) via Azure AI Foundry |
 | **Azure AI Inference SDK** | Latest | Embeddings via Azure AI Foundry |
 | **Azure AI Search SDK** | Latest | Direct SDK for hybrid search |
 | **Sentence Transformers** | Latest | Cross-encoder models for reranking |
@@ -139,7 +139,7 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 | Technology | Version | Justification |
 |------------|---------|---------------|
 | **Terraform** | 1.7+ | Infrastructure-as-code for Azure resources |
-| **Azure AI Foundry** | Claude Sonnet 4.5, text-embedding-3-large | Chat and embedding models via AI Foundry marketplace |
+| **Azure AI Foundry** | Kimi K2.5, text-embedding-3-large | Chat and embedding models via AI Foundry marketplace |
 | **Azure AI Search** | Standard tier | Vector + keyword + semantic ranking |
 | **Azure Document Intelligence** | Standard | Document parsing with layout analysis |
 | **Azure Storage Account** | Standard | Document storage |
@@ -378,7 +378,7 @@ Key components:
     Format chunks with [1], [2], ... identifiers + metadata
         │
         ▼
- 6. ANSWER GENERATION (Azure AI Foundry — Claude Sonnet 4.5)
+ 6. ANSWER GENERATION (Azure AI Foundry — Kimi K2.5)
     Stream response with inline citations [1][2]
         │
         ▼
@@ -426,7 +426,7 @@ Key components:
 
 | Task | Status | Details |
 |------|--------|---------|
-| Terraform IaC | ✅ Done | Resource group, Azure AI Foundry (Claude Sonnet 4.5 + embeddings), Azure AI Search, Document Intelligence, Storage Account — modular setup in `terraform/` with 4 modules |
+| Terraform IaC | ✅ Done | Resource group, Azure AI Foundry (Kimi K2.5 + embeddings), Azure AI Search, Document Intelligence, Storage Account — modular setup in `terraform/` with 4 modules |
 | Monorepo setup | ✅ Done | `apps/api/package.json` added with `dev` script so `npm run dev` starts both Next.js and FastAPI concurrently via Turborepo |
 | FastAPI scaffold | ✅ Done | App entry with CORS, Pydantic settings, Azure SDK client factories, routers (health, chat, documents) under `/api/v1`, `.env.example` |
 | Next.js scaffold | ✅ Done | Tailwind CSS v4 with `@tailwindcss/postcss`, chat layout skeleton with header/message area/input bar, dark mode support, `.env.example` |
@@ -479,10 +479,10 @@ Key components:
 
 | Task | Details |
 |------|---------|
-| Query rewriting | Conversational rewriting with Claude Sonnet 4.5, follow-up handling |
+| Query rewriting | Conversational rewriting with Kimi K2.5, follow-up handling |
 | Hybrid search | Azure AI Search SDK, vector + keyword + semantic, RRF fusion, filtering |
 | Reranking (optional) | Sentence Transformers cross-encoder (`ms-marco-MiniLM-L-12-v2`) — toggleable via config, benchmarked against Azure semantic ranking |
-| Answer generation | Claude Sonnet 4.5 streaming, system prompt with citation instructions, SSE |
+| Answer generation | Kimi K2.5 streaming, system prompt with citation instructions, SSE |
 | Citation extraction | Parse `[1]` `[2]` from output, map to source chunks |
 | API endpoints | `/chat/stream`, `/chat/query`, `/documents`, `/documents/{id}/chunks` |
 
@@ -515,7 +515,7 @@ Key components:
 
 | Task | Details |
 |------|---------|
-| LLM-as-judge evaluation | 3 metrics (faithfulness, relevance, completeness), grading prompts via Claude, test set (10-20 questions) |
+| LLM-as-judge evaluation | 3 metrics (faithfulness, relevance, completeness), grading prompts via Kimi K2.5, test set (10-20 questions) |
 | Reranking benchmark | Compare Azure semantic ranking vs cross-encoder reranking on eval metrics — measure faithfulness/relevance delta to justify the added complexity |
 | Query understanding | Intent classification, answerability detection |
 | Answer quality | Confidence scoring, table generation when appropriate |
@@ -556,7 +556,7 @@ enterprise-rag-architecture/
 │   │   ├── services/
 │   │   │   ├── retrieval_service.py  # Azure AI Search integration
 │   │   │   ├── reranking_service.py  # Cross-encoder reranking
-│   │   │   ├── generation_service.py # Claude Sonnet 4.5 chat completions
+│   │   │   ├── generation_service.py # Kimi K2.5 chat completions
 │   │   │   ├── query_service.py      # Query rewriting
 │   │   │   └── evaluation_service.py # LLM-as-judge evaluation
 │   │   ├── models/
@@ -758,7 +758,7 @@ Designed for secure enterprise environments. All documents and queries remain wi
 
 ### Custom LLM-as-Judge
 
-A custom evaluation pipeline using Claude Sonnet 4.5 as a judge, providing full control over metrics, prompts, and scoring.
+A custom evaluation pipeline using Kimi K2.5 as a judge, providing full control over metrics, prompts, and scoring.
 
 ### Metrics
 
@@ -768,7 +768,7 @@ A custom evaluation pipeline using Claude Sonnet 4.5 as a judge, providing full 
 | **Relevance** | Does the answer address the question? |
 | **Completeness** | Does the answer cover all aspects of the question? |
 
-Each metric is scored 0-10 by Claude Sonnet 4.5 with a grading prompt and reasoning.
+Each metric is scored 0-10 by Kimi K2.5 with a grading prompt and reasoning.
 
 ### Test Set
 

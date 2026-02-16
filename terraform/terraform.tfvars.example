@@ -4,6 +4,6 @@ storage_account_name = "stenterpriserag"
 project_prefix       = "rag"
 
 # AI model defaults (override if needed)
-# chat_model_name      = "claude-sonnet-4-5"
+# chat_model_name      = "Kimi-K2.5"
 # embedding_model_name = "text-embedding-3-large"
 # search_service_sku   = "free"  (default)

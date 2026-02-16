@@ -1,6 +1,6 @@
 # Enterprise RAG Architecture
 
-A production-grade Retrieval-Augmented Generation system built for enterprise environments. Uses Azure AI Foundry (Claude Sonnet 4.5 for inference, text-embedding-3-large for embeddings), Azure AI Search for hybrid retrieval and Databricks for automated document ingestion and chunking workflows.
+A production-grade Retrieval-Augmented Generation system built for enterprise environments. Uses Azure AI Foundry (Kimi K2.5 for inference, text-embedding-3-large for embeddings), Azure AI Search for hybrid retrieval and Databricks for automated document ingestion and chunking workflows.
 
 All data stays within your Azure tenant. No external API calls, no third-party logging, no data leaving your private environment.
 
@@ -27,7 +27,7 @@ Documents (PDF/Word/TXT)
                                     |
                                     v
   Next.js  <──────>  FastAPI  <──────>  Azure AI Foundry
-  (chat UI,          (query rewrite,    (Claude Sonnet 4.5,
+  (chat UI,          (query rewrite,    (Kimi K2.5,
    streaming,         reranking,         text-embedding-3-large)
    citations)         generation)
 ```
@@ -53,7 +53,7 @@ Documents (PDF/Word/TXT)
 - Citations parsed and rendered as they stream in
 
 **Evaluation**
-- Custom LLM-as-judge pipeline using Claude
+- Custom LLM-as-judge pipeline using Kimi K2.5
 - Three metrics: faithfulness, relevance, completeness
 - Automated evaluation against a curated test set
 
@@ -74,7 +74,7 @@ Documents (PDF/Word/TXT)
 |-------|-----------|
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Vercel Streamdown |
 | Backend | FastAPI, Python 3.9+, Pydantic, Sentence Transformers |
-| AI Services | Azure AI Foundry (Claude Sonnet 4.5, text-embedding-3-large), Azure AI Search, Azure Document Intelligence |
+| AI Services | Azure AI Foundry (Kimi K2.5, text-embedding-3-large), Azure AI Search, Azure Document Intelligence |
 | Ingestion | Databricks Jobs via Asset Bundles, semantic chunking |
 | Infrastructure | Terraform, Azure Storage Account |
 | Monorepo | Turborepo, npm workspaces, shared ESLint and TypeScript configs |

@@ -12,8 +12,7 @@ module "ai_foundry" {
 
   resource_group_name  = azurerm_resource_group.main.name
   location             = azurerm_resource_group.main.location
-  project_prefix       = var.project_prefix
-  chat_model_name      = var.chat_model_name
+  project_prefix       = "${var.project_prefix}-${random_id.suffix.hex}"
   embedding_model_name = var.embedding_model_name
 }
 
@@ -31,7 +30,7 @@ module "storage" {
 
   resource_group_name  = azurerm_resource_group.main.name
   location             = azurerm_resource_group.main.location
-  storage_account_name = var.storage_account_name
+  storage_account_name = "${var.storage_account_name}${random_id.suffix.hex}"
 }
 
 module "document_intelligence" {

@@ -10,22 +10,22 @@ variable "project_prefix" {
   type = string
 }
 
-variable "chat_model_name" {
-  description = "Chat model to deploy (Anthropic)"
+variable "chat_deployment_name" {
+  description = "Deployment name for the chat model"
   type        = string
-  default     = "claude-sonnet-4-5"
+  default     = "Kimi-K2.5"
+}
+
+variable "chat_model_name" {
+  description = "Chat model to deploy"
+  type        = string
+  default     = "Kimi-K2.5"
 }
 
 variable "chat_model_version" {
   description = "Chat model version"
   type        = string
-  default     = "latest"
-}
-
-variable "chat_deployment_name" {
-  description = "Deployment name for the chat model"
-  type        = string
-  default     = "claude-sonnet-4-5"
+  default     = "1"
 }
 
 variable "embedding_model_name" {

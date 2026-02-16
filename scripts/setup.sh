@@ -87,8 +87,9 @@ if [ ! -f terraform.tfvars ]; then
   echo "    Resource group       = rg-enterprise-rag"
   echo "    Location             = swedencentral"
   echo "    Storage account      = stenterpriserag"
+  echo "    Foundry project      = rag-<id>-project"
   echo ""
-  echo "    Chat model           = Claude Sonnet 4.5 (Anthropic)"
+  echo "    Chat model           = Kimi K2.5 (Moonshot AI)"
   echo "    Embedding model      = text-embedding-3-large (v1)"
   echo "    Search SKU           = free"
   echo ""
@@ -100,17 +101,17 @@ fi
 info "Running terraform init..."
 terraform init -input=false
 echo ""
-info "Creating Azure resources (this can take 3-5 minutes)..."
+info "Creating Azure resources (this can take 10-15 minutes)..."
 terraform apply -auto-approve
 
 ok "Azure resources provisioned"
 
-# ─── Step 2: Generate .env files from Terraform outputs ─────────────
-info "Step 2/4 — Generating .env files from Terraform outputs..."
-
 get_output() {
   terraform output -raw "$1" 2>/dev/null
 }
+
+# ─── Step 2: Generate .env files from Terraform outputs ─────────────
+info "Step 2/4 — Generating .env files from Terraform outputs..."
 
 # apps/api/.env
 cat > "$ROOT_DIR/apps/api/.env" <<EOF

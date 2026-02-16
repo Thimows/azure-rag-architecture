@@ -12,29 +12,37 @@ resource "azurerm_cognitive_account" "ai_foundry" {
   }
 }
 
-resource "azapi_resource" "claude_chat" {
-  type      = "Microsoft.CognitiveServices/accounts/deployments@2024-10-01"
-  name      = var.chat_deployment_name
-  parent_id = azurerm_cognitive_account.ai_foundry.id
+resource "azurerm_cognitive_account_project" "project" {
+  name                 = "${var.project_prefix}-project"
+  cognitive_account_id = azurerm_cognitive_account.ai_foundry.id
+  location             = var.location
 
-  body = {
-    sku = {
-      name     = "GlobalStandard"
-      capacity = 1
-    }
-    properties = {
-      model = {
-        format  = "Anthropic"
-        name    = var.chat_model_name
-        version = var.chat_model_version
-      }
-    }
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+resource "azurerm_cognitive_deployment" "chat" {
+  name                 = var.chat_deployment_name
+  cognitive_account_id = azurerm_cognitive_account.ai_foundry.id
+
+  model {
+    format  = "Moonshot AI"
+    name    = var.chat_model_name
+    version = var.chat_model_version
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = 1
   }
 }
 
 resource "azurerm_cognitive_deployment" "embedding" {
   name                 = var.embedding_deployment_name
   cognitive_account_id = azurerm_cognitive_account.ai_foundry.id
+
+  depends_on = [azurerm_cognitive_deployment.chat]
 
   model {
     format  = "OpenAI"
