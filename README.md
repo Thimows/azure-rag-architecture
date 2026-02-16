@@ -109,7 +109,7 @@ enterprise-rag-architecture/
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/your-org/enterprise-rag-architecture.git
+git clone https://github.com/Thimows/enterprise-rag-architecture.git
 cd enterprise-rag-architecture
 npm install
 
