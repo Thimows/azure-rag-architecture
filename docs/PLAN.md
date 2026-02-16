@@ -435,19 +435,17 @@ Key components:
 
 ---
 
-### Phase 1.5: Provision Infrastructure
+### Phase 1.5: Provision Infrastructure ✅ COMPLETE
 
 **Goal**: Actually run Terraform and Databricks deployments so Azure resources and Databricks jobs exist
 
-| Task | Details |
-|------|---------|
-| Provision Azure resources | `cd terraform && cp terraform.tfvars.example terraform.tfvars` → edit with your subscription/config → `terraform init && terraform apply` |
-| Configure `.env` files | Copy Terraform outputs into `apps/api/.env` and `apps/web/.env.local` |
-| Create Databricks secrets scope | `databricks secrets create-scope rag-ingestion` → populate secrets from Terraform outputs |
-| Deploy Databricks bundle | `cd databricks && databricks bundle deploy --target dev` |
-| Verify | Azure Portal shows all resources, Databricks workspace has the ingestion jobs |
-
-> **Note**: This step requires an Azure subscription and Databricks workspace. Skip until you're ready to test end-to-end.
+| Task | Status | Details |
+|------|--------|---------|
+| Provision Azure resources | ✅ Done | `./scripts/setup.sh` runs Terraform automatically — AI Foundry (Kimi K2.5 + text-embedding-3-large), AI Search, Document Intelligence, Storage Account all provisioned |
+| Configure `.env` files | ✅ Done | Setup script generates `apps/api/.env` and `apps/web/.env.local` from Terraform outputs |
+| Create Databricks secrets scope | ✅ Done | Setup script creates `rag-ingestion` scope and writes 10 secrets |
+| Deploy Databricks bundle | ✅ Done | Serverless compute, 2 jobs (ingestion + index creation), environments with pip dependencies |
+| Verify | ✅ Done | Azure Portal shows all resources, Databricks workspace has both jobs deployed |
 
 **Deliverables**: Live Azure resources (AI Foundry, AI Search, Storage, Document Intelligence), Databricks jobs deployed and ready to run
 
@@ -465,7 +463,7 @@ Key components:
 | Embedding generation notebook | ✅ Done | `03_embedding_generation.py` — Azure AI Foundry EmbeddingsClient, batch of 100, exponential backoff retry, 3072-dim validation, Delta table `rag_ingestion.chunks_with_embeddings` |
 | Azure AI Search index setup | ✅ Done | `00_create_search_index.py` — 9 fields, HNSW vector search (cosine, 3072-dim), semantic ranking config, idempotent `create_or_update_index` |
 | Search indexing notebook | ✅ Done | `04_indexing.py` — Batch upsert via `merge_or_upload_documents`, per-document error tracking |
-| Databricks Asset Bundles | ✅ Done | `databricks.yml` with 2 jobs, 4 sequential tasks with dependencies, 3 targets (dev/staging/prod) with cluster overrides |
+| Databricks Asset Bundles | ✅ Done | `databricks.yml` with 2 jobs, 4 sequential tasks with dependencies, serverless compute, 3 targets (dev/staging/prod) |
 | Document upload API | ✅ Done | `POST /documents/upload` (PDF/DOCX/TXT, 50MB max, Blob Storage), `GET /documents` (list blobs), Pydantic models in `document_models.py` |
 | Bug fixes | ✅ Done | Fixed `get_document_analysis_client` credentials, added missing settings fields, updated `.env.example` |
 
