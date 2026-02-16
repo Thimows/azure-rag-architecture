@@ -87,7 +87,7 @@ The default chat model is **Kimi K2.5** (Moonshot AI). You can swap it for any o
 
 ```hcl
 # Third-party models (available on all subscriptions)
-chat_model_format = "Moonshot AI"      # default
+chat_model_format = "MoonshotAI"       # default
 chat_model_name   = "Kimi-K2.5"       # default
 
 chat_model_format = "DeepSeek"
@@ -96,9 +96,12 @@ chat_model_name   = "DeepSeek-V3.2"
 chat_model_format = "Mistral AI"
 chat_model_name   = "Mistral-Large-3"
 
-# OpenAI models (may require enterprise subscription)
+chat_model_format = "xAI"
+chat_model_name   = "grok-4-fast-reasoning"
+
+# OpenAI models (may require enterprise subscription for newer models)
 chat_model_format = "OpenAI"
-chat_model_name   = "gpt-5.3"
+chat_model_name   = "gpt-5.2-chat"
 ```
 
 Embeddings use **text-embedding-3-large** (OpenAI via Azure), which is also Direct from Azure.

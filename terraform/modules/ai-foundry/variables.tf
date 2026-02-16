@@ -17,9 +17,9 @@ variable "chat_deployment_name" {
 }
 
 variable "chat_model_format" {
-  description = "Model provider format (e.g. 'Moonshot AI', 'OpenAI', 'DeepSeek', 'Mistral AI')"
+  description = "Model provider format (e.g. 'MoonshotAI', 'OpenAI', 'DeepSeek', 'Mistral AI')"
   type        = string
-  default     = "Moonshot AI"
+  default     = "MoonshotAI"
 }
 
 variable "chat_model_name" {
