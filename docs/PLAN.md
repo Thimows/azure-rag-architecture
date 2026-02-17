@@ -1,16 +1,16 @@
 # Enterprise RAG Architecture
 
-> A production-grade, enterprise-ready Retrieval-Augmented Generation (RAG) system showcasing best practices for building transparent, citation-based AI applications with Azure AI Foundry (Kimi K2.5), Azure AI Search, and Databricks.
+> A production-grade, enterprise-ready Retrieval-Augmented Generation (RAG) system showcasing best practices for building transparent, citation-based AI applications with Azure AI Foundry (Kimi K2.5), Azure AI Search, and Azure Databricks. The entire stack runs inside a single Azure tenant.
 
 ## Purpose
 
 This project demonstrates a **complete, production-ready RAG pipeline** designed for enterprise environments where:
 
-- **Data privacy** is paramount — all data stays within your Azure tenant
-- **Answer transparency** is required — citations with exact source highlighting
-- **Quality assurance** is measurable — custom LLM-as-judge evaluation
-- **Scalability** is built-in — Databricks for batch processing, Azure AI Search for retrieval
-- **Developer experience** is optimized — Turborepo monorepo, hot reload, type safety
+- **Data privacy** is paramount -- all data stays within your Azure tenant
+- **Answer transparency** is required -- citations with exact source highlighting
+- **Quality assurance** is measurable -- custom LLM-as-judge evaluation
+- **Scalability** is built-in --Azure Databricks for batch processing, Azure AI Search for retrieval
+- **Developer experience** is optimized -- Turborepo monorepo, hot reload, type safety
 
 Unlike framework-heavy implementations, this showcase uses **direct SDK integration** with Azure services to provide maximum control, transparency, and performance.
 
@@ -37,15 +37,15 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          INGESTION PIPELINE                             │
 │                                                                         │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐               │
 │  │  Documents    │───▶│  Databricks  │───▶│   Azure AI   │              │
 │  │  (PDF/Word)   │    │    Jobs      │    │    Search    │              │
-│  │              │    │              │    │   (Index)    │              │
-│  │   Storage    │    │  • Parse     │    │              │              │
-│  │   Account    │    │  • Chunk     │    │  • Vector    │              │
-│  └──────────────┘    │  • Embed     │    │  • Keyword   │              │
-│                      │  • Metadata  │    │  • Semantic  │              │
-│                      └──────────────┘    └──────────────┘              │
+│  │              │    │              │    │   (Index)    │               │
+│  │   Storage    │    │  • Parse     │    │              │               │
+│  │   Account    │    │  • Chunk     │    │  • Vector    │               │
+│  └──────────────┘    │  • Embed     │    │  • Keyword   │               │
+│                      │  • Metadata  │    │  • Semantic  │               │
+│                      └──────────────┘    └──────────────┘               │
 │                             │                                           │
 │                             ▼                                           │
 │                      Azure Document Intelligence                        │
@@ -56,15 +56,15 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        RETRIEVAL & GENERATION                           │
 │                                                                         │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐              │
-│  │   Next.js    │───▶│   FastAPI    │───▶│   Azure AI   │              │
-│  │   Frontend   │    │   Backend    │    │    Search    │              │
-│  │              │    │              │    │              │              │
-│  │  • Chat UI   │◀───│  • Query     │◀───│  • Hybrid    │              │
-│  │  • Streaming │    │    Rewrite   │    │    Search    │              │
-│  │  • Citations │    │  • Rerank    │    │  • Vector +  │              │
-│  │  • Sources   │    │  • Generate  │    │    Keyword   │              │
-│  └──────────────┘    │              │    └──────────────┘              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐               │
+│  │   Next.js    │───▶│   FastAPI    │───▶│   Azure AI   │               │
+│  │   Frontend   │    │   Backend    │    │    Search    │               │
+│  │              │    │              │    │              │               │
+│  │  • Chat UI   │◀───│  • Query     │◀───│  • Hybrid    │               │
+│  │  • Streaming │    │    Rewrite   │    │    Search    │               │
+│  │  • Citations │    │  • Rerank    │    │  • Vector +  │               │
+│  │  • Sources   │    │  • Generate  │    │    Keyword   │               │
+│  └──────────────┘    │              │    └──────────────┘               │
 │                      │ Cross-Encoder│                                   │
 │                      │Azure AI Fndry│                                   │
 │                      └──────────────┘                                   │
@@ -77,13 +77,13 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        EVALUATION PIPELINE                              │
 │                                                                         │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐              │
-│  │   Test Set   │───▶│   FastAPI    │───▶│Azure AI Fndry│              │
-│  │              │    │   Evaluator  │    │(LLM-as-Judge)│              │
-│  │  • Questions │    │              │    │              │              │
-│  │  • Expected  │    │ • Faithfuln. │    │  • Grading   │              │
-│  │    Answers   │    │ • Relevance  │    │  • Reasoning │              │
-│  └──────────────┘    │ • Completen. │    └──────────────┘              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐               │
+│  │   Test Set   │───▶│   FastAPI    │───▶│Azure AI Fndry│               │
+│  │              │    │   Evaluator  │    │(LLM-as-Judge)│               │
+│  │  • Questions │    │              │    │              │               │
+│  │  • Expected  │    │ • Faithfuln. │    │  • Grading   │               │
+│  │    Answers   │    │ • Relevance  │    │  • Reasoning │               │
+│  └──────────────┘    │ • Completen. │    └──────────────┘               │
 │                      └──────────────┘                                   │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -92,12 +92,12 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 
 | Component | Responsibility |
 |-----------|---------------|
-| **Databricks Jobs** | Batch document ingestion, parsing (Document Intelligence), chunking strategies, embedding generation, quality checks |
+| **Azure Databricks Jobs** | Parameterized incremental ingestion, parsing (Document Intelligence), chunking strategies, embedding generation, task value passing between notebooks |
 | **Azure AI Search** | Vector + keyword + semantic hybrid search, filtering, index management |
 | **FastAPI Backend** | Query understanding, retrieval orchestration, cross-encoder reranking, answer generation with citations, streaming responses |
 | **Next.js Frontend** | Chat interface, markdown streaming (Streamdown), citation bubbles, source highlighting, document viewer |
 | **Azure AI Foundry** | Chat completions (Kimi K2.5), text embeddings (`text-embedding-3-large`), evaluation (LLM-as-judge) |
-| **Terraform** | Infrastructure provisioning, resource management, reproducible deployments |
+| **Terraform** | Infrastructure provisioning (all Azure resources including Databricks workspace), reproducible deployments |
 
 ---
 
@@ -130,7 +130,7 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 
 | Technology | Version | Justification |
 |------------|---------|---------------|
-| **Databricks** | Runtime 13.3+ | Scalable batch processing, scheduled jobs |
+| **Azure Databricks** | Serverless | Scalable batch processing, parameterized jobs with task values |
 | **Databricks Asset Bundles** | Latest | Declarative job deployment |
 | **Azure Document Intelligence** | Latest | Advanced PDF/Word parsing with layout analysis |
 
@@ -138,9 +138,10 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 
 | Technology | Version | Justification |
 |------------|---------|---------------|
-| **Terraform** | 1.7+ | Infrastructure-as-code for Azure resources |
-| **Azure AI Foundry** | Kimi K2.5, text-embedding-3-large | Chat and embedding models via AI Foundry marketplace |
-| **Azure AI Search** | Standard tier | Vector + keyword + semantic ranking |
+| **Terraform** | 1.7+ | Infrastructure-as-code for all Azure resources including Databricks workspace |
+| **Azure AI Foundry** | Kimi K2.5, text-embedding-3-large | Chat and embedding models (Direct from Azure) |
+| **Azure AI Search** | Free/Standard tier | Vector + keyword + semantic ranking |
+| **Azure Databricks** | Premium tier | Managed Spark workspace for ingestion pipeline |
 | **Azure Document Intelligence** | Standard | Document parsing with layout analysis |
 | **Azure Storage Account** | Standard | Document storage |
 
@@ -157,29 +158,68 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 
 ## System Components
 
-### 1. Databricks Ingestion Pipeline
+### 1. Azure Databricks Ingestion Pipeline
 
 **Location**: `databricks/`
 
-The ingestion pipeline runs as Databricks Jobs, defined via Databricks Asset Bundles for declarative, version-controlled deployment.
+The ingestion pipeline runs as a parameterized Azure Databricks Job, defined via Databricks Asset Bundles (DAB) for declarative, version-controlled deployment. The Databricks workspace is provisioned by Terraform inside your Azure subscription.
+
+**Incremental Processing**:
+
+Each job run only processes the documents passed as parameters. When a user uploads `report.pdf` and `contract.docx`, the FastAPI upload endpoint triggers a Databricks job with `document_names=report.pdf,contract.docx`. Only those two documents get parsed, chunked, embedded, and indexed.
+
+Task values (`dbutils.jobs.taskValues`) pass document/chunk IDs between notebook tasks within the same job run. This is scoped per run, so concurrent uploads from different users never interfere with each other. Delta tables grow via `append` mode (ACID-safe for concurrent writes).
+
+```
+User uploads report.pdf, contract.docx
+        |
+        v
+FastAPI saves to Blob Storage
+        |
+        v
+Databricks job triggered with params:
+  { "document_names": "report.pdf,contract.docx" }
+        |
+        v
+01_parsing:  parses only those 2 blobs, appends to parsed_documents
+             sets task value: document_ids
+        |
+        v
+02_chunking: gets document_ids via task value, filters parsed_documents
+             chunks only those docs, appends to chunks
+             sets task value: chunk_ids
+        |
+        v
+03_embedding: gets chunk_ids via task value, filters chunks
+              embeds only new chunks, appends to chunks_with_embeddings
+              sets task value: chunk_ids (passthrough)
+        |
+        v
+04_indexing:  gets chunk_ids via task value, filters chunks_with_embeddings
+              upserts only those to Azure AI Search
+```
+
+For high-volume production workloads, the parameterized job approach can be replaced with Databricks Auto Loader for real-time streaming ingestion via Azure Event Grid notifications on Blob Storage.
 
 **Pipeline Steps**:
 
-1. **Document Parsing** (`01_document_parsing.py`) — Parse PDFs/Word docs via Azure Document Intelligence, extract text, layout, and metadata
-2. **Chunking** (`02_chunking.py`) — Apply chunking strategies with overlap and metadata preservation
-3. **Embedding Generation** (`03_embedding_generation.py`) — Batch embed chunks using Azure AI Foundry `text-embedding-3-large`
-4. **Indexing** (`04_indexing.py`) — Upload chunks + embeddings to Azure AI Search index
+1. **Document Parsing** (`01_document_parsing.py`) -- Parse PDFs/Word docs via Azure Document Intelligence, extract text, layout, and metadata. Filters by `document_names` parameter.
+2. **Chunking** (`02_chunking.py`) -- Apply chunking strategies with overlap and metadata preservation. Receives `document_ids` via task value.
+3. **Embedding Generation** (`03_embedding_generation.py`) -- Batch embed chunks using Azure AI Foundry `text-embedding-3-large`. Receives `chunk_ids` via task value.
+4. **Indexing** (`04_indexing.py`) -- Upsert chunks + embeddings to Azure AI Search index. Receives `chunk_ids` via task value.
+
+**Search Index Creation**: The Azure AI Search index is created as a standalone Python script (`apps/api/scripts/create_search_index.py`) during `setup.sh`, not as a Databricks notebook. It has no Databricks-specific logic and reads credentials from the same `.env` as the FastAPI app.
 
 **Chunking Strategies**:
 
 ```python
-# Semantic chunking — preserve sentence boundaries
+# Semantic chunking -- preserve sentence boundaries
 semantic_chunks = semantic_chunker(text, max_tokens=512, overlap_tokens=50)
 
-# Structure-aware — respect document hierarchy (headers, sections)
+# Structure-aware -- respect document hierarchy (headers, sections)
 structured_chunks = structure_aware_chunker(text, layout_data, max_tokens=512)
 
-# Sliding window — fixed-size with overlap
+# Sliding window -- fixed-size with overlap
 sliding_chunks = sliding_window_chunker(text, window_size=512, overlap=50)
 ```
 
@@ -193,21 +233,52 @@ resources:
   jobs:
     document_ingestion_job:
       name: "[${bundle.target}] Document Ingestion"
-      job_clusters:
-        - job_cluster_key: main_cluster
-          new_cluster:
-            spark_version: 13.3.x-scala2.12
-            node_type_id: Standard_DS3_v2
-            num_workers: 2
+      parameters:
+        - name: document_names
+          default: ""
+      environments:
+        - environment_key: ingestion_env
+          spec:
+            client: "1"
+            dependencies:
+              - azure-ai-formrecognizer>=3.3.0
+              - azure-search-documents>=11.4.0
+              - azure-ai-inference>=1.0.0b9
+              - tiktoken>=0.7.0
       tasks:
         - task_key: parse_documents
           notebook_task:
             notebook_path: ./notebooks/01_document_parsing.py
-        - task_key: chunk_and_embed
+            base_parameters:
+              document_names: "{{job.parameters.document_names}}"
+          environment_key: ingestion_env
+        - task_key: chunk_documents
           depends_on:
             - task_key: parse_documents
           notebook_task:
             notebook_path: ./notebooks/02_chunking.py
+          environment_key: ingestion_env
+        - task_key: generate_embeddings
+          depends_on:
+            - task_key: chunk_documents
+          notebook_task:
+            notebook_path: ./notebooks/03_embedding_generation.py
+          environment_key: ingestion_env
+        - task_key: index_documents
+          depends_on:
+            - task_key: generate_embeddings
+          notebook_task:
+            notebook_path: ./notebooks/04_indexing.py
+          environment_key: ingestion_env
+
+targets:
+  dev:
+    mode: development
+    default: true
+  staging:
+    mode: development
+  prod:
+    mode: production
 ```
 
 ---
@@ -280,7 +351,7 @@ async def chat_stream(request: ChatRequest):
         filters=request.filters
     )
 
-    # 3. Rerank (optional — cross-encoder vs Azure semantic ranking)
+    # 3. Rerank (optional --cross-encoder vs Azure semantic ranking)
     if settings.RERANKING_ENABLED:
         reranked_chunks = await rerank_chunks(
             query=optimized_query,
@@ -323,14 +394,14 @@ Format your response as markdown with inline citations [1][2] after every fact.
 
 Key components:
 
-- **ChatInterface** — Main chat component with message list and input
-- **StreamingMessage** — Real-time markdown rendering via Vercel Streamdown
-- **CitationBubble** — Inline `[1]` `[2]` bubbles with two interaction modes:
+- **ChatInterface** --Main chat component with message list and input
+- **StreamingMessage** --Real-time markdown rendering via Vercel Streamdown
+- **CitationBubble** --Inline `[1]` `[2]` bubbles with two interaction modes:
   - **Hover**: Highlight the cited text in the sources pane + show a tooltip with source name, page number, and chunk preview
   - **Click**: Open the artifact panel from the right with the full document viewer, scrolled to the correct page, with the cited passage highlighted
-- **SourcesPane** — Below the answer showing source chunks with document name and page number
-- **ArtifactPanel** — Slide-in panel from the right, opens on citation click. Contains the document viewer with the original PDF rendered, navigated to the relevant page, with the cited text highlighted using fuzzy text matching against the chunk content
-- **DocumentViewer** — PDF viewer (PDF.js) with highlight overlay. Uses fuzzy text matching of the chunk content against the rendered page text to locate and highlight the exact passage
+- **SourcesPane** -- Below the answer showing source chunks with document name and page number
+- **ArtifactPanel** -- Slide-in panel from the right, opens on citation click. Contains the document viewer with the original PDF rendered, navigated to the relevant page, with the cited text highlighted using fuzzy text matching against the chunk content
+- **DocumentViewer** -- PDF viewer (PDF.js) with highlight overlay. Uses fuzzy text matching of the chunk content against the rendered page text to locate and highlight the exact passage
 
 **Citation Interaction Flow**:
 ```
@@ -378,7 +449,7 @@ Key components:
     Format chunks with [1], [2], ... identifiers + metadata
         │
         ▼
- 6. ANSWER GENERATION (Azure AI Foundry — Kimi K2.5)
+ 6. ANSWER GENERATION (Azure AI Foundry --Kimi K2.5)
     Stream response with inline citations [1][2]
         │
         ▼
@@ -393,28 +464,36 @@ Key components:
 ### Ingestion Flow
 
 ```
- Document uploaded to Azure Storage
-        │
-        ▼
+ User uploads documents via FastAPI
+        |
+        v
+ FastAPI saves to Azure Blob Storage
+        |
+        v
+ Databricks job triggered with document_names parameter
+        |
+        v
  1. DOCUMENT PARSING (Databricks + Document Intelligence)
-    Extract text, layout, headers, tables, page numbers
-        │
-        ▼
+    Parse only the uploaded documents, extract text/layout/metadata
+    Set task value: document_ids
+        |
+        v
  2. CHUNKING (Databricks)
-    Semantic chunking with overlap, metadata per chunk
-        │
-        ▼
+    Get document_ids via task value, chunk only those documents
+    Set task value: chunk_ids
+        |
+        v
  3. EMBEDDING GENERATION (Azure AI Foundry)
-    Batch process (100 at a time), validate dimensions
-        │
-        ▼
- 4. QUALITY CHECKS
-    Verify chunk sizes, check for empty embeddings, validate metadata
-        │
-        ▼
- 5. INDEXING (Azure AI Search)
-    Batch upload → vector index (HNSW) + keyword index + semantic ranking
+    Get chunk_ids via task value, embed only new chunks (batch of 100)
+    Set task value: chunk_ids (passthrough)
+        |
+        v
+ 4. INDEXING (Azure AI Search)
+    Get chunk_ids via task value, upsert only new chunks
+    Batch upload with merge_or_upload (idempotent)
 ```
+
+Delta tables use append mode throughout. Each job run only touches the documents passed as parameters. Concurrent uploads from different users are safe (ACID-guaranteed by Delta).
 
 ---
 
@@ -426,7 +505,7 @@ Key components:
 
 | Task | Status | Details |
 |------|--------|---------|
-| Terraform IaC | ✅ Done | Resource group, Azure AI Foundry (Kimi K2.5 + embeddings), Azure AI Search, Document Intelligence, Storage Account — modular setup in `terraform/` with 4 modules |
+| Terraform IaC | ✅ Done | Resource group, Azure AI Foundry (Kimi K2.5 + embeddings), Azure AI Search, Document Intelligence, Storage Account, Azure Databricks -- modular setup in `terraform/` with 5 modules |
 | Monorepo setup | ✅ Done | `apps/api/package.json` added with `dev` script so `npm run dev` starts both Next.js and FastAPI concurrently via Turborepo |
 | FastAPI scaffold | ✅ Done | App entry with CORS, Pydantic settings, Azure SDK client factories, routers (health, chat, documents) under `/api/v1`, `.env.example` |
 | Next.js scaffold | ✅ Done | Tailwind CSS v4 with `@tailwindcss/postcss`, chat layout skeleton with header/message area/input bar, dark mode support, `.env.example` |
@@ -441,33 +520,34 @@ Key components:
 
 | Task | Status | Details |
 |------|--------|---------|
-| Provision Azure resources | ✅ Done | `./scripts/setup.sh` runs Terraform automatically — AI Foundry (Kimi K2.5 + text-embedding-3-large), AI Search, Document Intelligence, Storage Account all provisioned |
+| Provision Azure resources | ✅ Done | `./scripts/setup.sh` runs Terraform automatically -- AI Foundry (Kimi K2.5 + text-embedding-3-large), AI Search, Document Intelligence, Storage Account, Azure Databricks workspace all provisioned |
 | Configure `.env` files | ✅ Done | Setup script generates `apps/api/.env` and `apps/web/.env.local` from Terraform outputs |
-| Create Databricks secrets scope | ✅ Done | Setup script creates `rag-ingestion` scope and writes 10 secrets |
-| Deploy Databricks bundle | ✅ Done | Serverless compute, 2 jobs (ingestion + index creation), environments with pip dependencies |
-| Verify | ✅ Done | Azure Portal shows all resources, Databricks workspace has both jobs deployed |
+| Create search index | ✅ Done | Setup script runs `apps/api/scripts/create_search_index.py` to create/update the Azure AI Search index |
+| Create Databricks secrets scope | ✅ Done | Setup script authenticates Databricks CLI via Azure CLI token, creates `rag-ingestion` scope and writes 10 secrets |
+| Deploy Databricks bundle | ✅ Done | Serverless compute, parameterized ingestion job, environments with pip dependencies |
+| Verify | ✅ Done | Azure Portal shows all resources, Databricks workspace has ingestion job deployed |
 
-**Deliverables**: Live Azure resources (AI Foundry, AI Search, Storage, Document Intelligence), Databricks jobs deployed and ready to run
+**Deliverables**: Live Azure resources (AI Foundry, AI Search, Storage, Document Intelligence, Databricks workspace), ingestion job deployed and ready to run
 
 ---
 
 ### Phase 2: Ingestion Pipeline ✅ COMPLETE
 
-**Goal**: Databricks pipeline for document processing
+**Goal**: Incremental Databricks pipeline for document processing
 
 | Task | Status | Details |
 |------|--------|---------|
 | Databricks utilities | ✅ Done | Client factories using `dbutils.secrets`, chunking strategies (semantic, structure-aware, sliding window with tiktoken), quality validation checks in `databricks/utils/` |
-| Document parsing notebook | ✅ Done | `01_document_parsing.py` — Azure Document Intelligence `prebuilt-layout`, PDF/DOCX/TXT support, Delta table `rag_ingestion.parsed_documents` |
-| Chunking notebook | ✅ Done | `02_chunking.py` — Widget-selectable strategy, deterministic chunk IDs, quality validation, Delta table `rag_ingestion.chunks` |
-| Embedding generation notebook | ✅ Done | `03_embedding_generation.py` — Azure AI Foundry EmbeddingsClient, batch of 100, exponential backoff retry, 3072-dim validation, Delta table `rag_ingestion.chunks_with_embeddings` |
-| Azure AI Search index setup | ✅ Done | `00_create_search_index.py` — 9 fields, HNSW vector search (cosine, 3072-dim), semantic ranking config, idempotent `create_or_update_index` |
-| Search indexing notebook | ✅ Done | `04_indexing.py` — Batch upsert via `merge_or_upload_documents`, per-document error tracking |
-| Databricks Asset Bundles | ✅ Done | `databricks.yml` with 2 jobs, 4 sequential tasks with dependencies, serverless compute, 3 targets (dev/staging/prod) |
+| Document parsing notebook | ✅ Done | `01_document_parsing.py` -- Accepts `document_names` parameter, parses only those blobs via Azure Document Intelligence `prebuilt-layout`, appends to Delta table `rag_ingestion.parsed_documents`, sets task value `document_ids` |
+| Chunking notebook | ✅ Done | `02_chunking.py` -- Gets `document_ids` via task value, chunks only those documents, appends to Delta table `rag_ingestion.chunks`, sets task value `chunk_ids` |
+| Embedding generation notebook | ✅ Done | `03_embedding_generation.py` -- Gets `chunk_ids` via task value, embeds only new chunks via Azure AI Foundry EmbeddingsClient (batch of 100, exponential backoff), appends to Delta table `rag_ingestion.chunks_with_embeddings`, passes `chunk_ids` forward |
+| Search indexing notebook | ✅ Done | `04_indexing.py` -- Gets `chunk_ids` via task value, upserts only new chunks via `merge_or_upload_documents` |
+| Azure AI Search index setup | ✅ Done | Moved to `apps/api/scripts/create_search_index.py` (standalone script, runs during `setup.sh`) -- 9 fields, HNSW vector search (cosine, 3072-dim), semantic ranking config, idempotent `create_or_update_index` |
+| Databricks Asset Bundles | ✅ Done | `databricks.yml` with parameterized ingestion job (`document_names` parameter), 4 sequential tasks with dependencies using task values, serverless compute, 3 targets (dev/staging/prod) |
 | Document upload API | ✅ Done | `POST /documents/upload` (PDF/DOCX/TXT, 50MB max, Blob Storage), `GET /documents` (list blobs), Pydantic models in `document_models.py` |
-| Bug fixes | ✅ Done | Fixed `get_document_analysis_client` credentials, added missing settings fields, updated `.env.example` |
+| Azure Databricks migration | ✅ Done | Terraform module provisions Databricks workspace inside Azure subscription, setup.sh authenticates via Azure CLI token (no separate Databricks login needed) |
 
-**Deliverables**: End-to-end ingestion job, sample documents indexed and searchable
+**Deliverables**: End-to-end incremental ingestion job triggered per upload, Delta tables grow via append, concurrent uploads are safe
 
 ---
 
@@ -479,7 +559,7 @@ Key components:
 |------|---------|
 | Query rewriting | Conversational rewriting with Kimi K2.5, follow-up handling |
 | Hybrid search | Azure AI Search SDK, vector + keyword + semantic, RRF fusion, filtering |
-| Reranking (optional) | Sentence Transformers cross-encoder (`ms-marco-MiniLM-L-12-v2`) — toggleable via config, benchmarked against Azure semantic ranking |
+| Reranking (optional) | Sentence Transformers cross-encoder (`ms-marco-MiniLM-L-12-v2`) --toggleable via config, benchmarked against Azure semantic ranking |
 | Answer generation | Kimi K2.5 streaming, system prompt with citation instructions, SSE |
 | Citation extraction | Parse `[1]` `[2]` from output, map to source chunks |
 | API endpoints | `/chat/stream`, `/chat/query`, `/documents`, `/documents/{id}/chunks` |
@@ -514,7 +594,7 @@ Key components:
 | Task | Details |
 |------|---------|
 | LLM-as-judge evaluation | 3 metrics (faithfulness, relevance, completeness), grading prompts via Kimi K2.5, test set (10-20 questions) |
-| Reranking benchmark | Compare Azure semantic ranking vs cross-encoder reranking on eval metrics — measure faithfulness/relevance delta to justify the added complexity |
+| Reranking benchmark | Compare Azure semantic ranking vs cross-encoder reranking on eval metrics --measure faithfulness/relevance delta to justify the added complexity |
 | Query understanding | Intent classification, answerability detection |
 | Answer quality | Confidence scoring, table generation when appropriate |
 | Conversation memory | Session history, load previous sessions (optional) |
@@ -563,6 +643,8 @@ enterprise-rag-architecture/
 │   │   │   └── evaluation_models.py
 │   │   ├── config/
 │   │   │   └── settings.py           # Pydantic settings
+│   │   ├── scripts/
+│   │   │   └── create_search_index.py # Standalone search index creation (run during setup.sh)
 │   │   └── utils/
 │   │       ├── azure_clients.py      # Azure SDK client init
 │   │       ├── streaming.py          # SSE streaming utilities
@@ -607,18 +689,20 @@ enterprise-rag-architecture/
 │   └── typescript-config/            # Shared TS config
 │
 ├── databricks/
-│   ├── databricks.yml                # Databricks Asset Bundles config
+│   ├── databricks.yml                # DAB config (parameterized ingestion job)
 │   ├── notebooks/
-│   │   ├── 01_document_parsing.py
-│   │   ├── 02_chunking.py
-│   │   ├── 03_embedding_generation.py
-│   │   └── 04_indexing.py
+│   │   ├── 01_document_parsing.py    # Filters by document_names, sets task value: document_ids
+│   │   ├── 02_chunking.py           # Gets document_ids via task value, sets chunk_ids
+│   │   ├── 03_embedding_generation.py # Gets chunk_ids via task value, passes forward
+│   │   └── 04_indexing.py           # Gets chunk_ids via task value, upserts to search
 │   ├── utils/
 │   │   ├── chunking_strategies.py
 │   │   ├── azure_clients.py
 │   │   └── quality_checks.py
 │   └── config/
-│       └── dev.yml
+│       ├── dev.yml                   # Development target (default)
+│       ├── staging.yml               # Staging target
+│       └── prod.yml                  # Production target
 │
 ├── terraform/
 │   ├── main.tf
@@ -628,6 +712,7 @@ enterprise-rag-architecture/
 │   ├── modules/
 │   │   ├── ai-foundry/
 │   │   ├── azure-search/
+│   │   ├── databricks/              # Azure Databricks workspace
 │   │   ├── storage/
 │   │   └── document-intelligence/
 │   └── terraform.tfvars.example
@@ -637,9 +722,13 @@ enterprise-rag-architecture/
 │   ├── run_evaluation.py
 │   └── results/
 │
+├── scripts/
+│   └── setup.sh                      # One-command setup (Terraform, .env, index, secrets, bundle)
+│
 ├── docs/
 │   └── PLAN.md                       # This file
 │
+├── pyrightconfig.json                # Python linting config (scoped per directory)
 ├── turbo.json
 ├── package.json
 └── README.md
@@ -727,8 +816,8 @@ Get evaluation results with per-question scores and reasoning.
 Designed for secure enterprise environments. All documents and queries remain within a private Azure tenant. No data is sent to public AI services.
 
 ### Data Sovereignty
-- All data remains in your Azure tenant
-- Direct Azure SDK integration — no data sent to external services
+- All data remains in your Azure tenant (including the Databricks workspace)
+- Direct Azure SDK integration -- no data sent to external services
 - Private endpoints for Azure service communication (optional, Terraform-configured)
 
 ### Access Control
@@ -742,7 +831,7 @@ Designed for secure enterprise environments. All documents and queries remain wi
 
 ### Monitoring & Auditing
 - Azure Monitor for centralized logging
-- No PII in logs — sanitize queries before logging
+- No PII in logs --sanitize queries before logging
 - Audit trails for document uploads, index updates, access patterns
 
 ### Input Validation
@@ -774,7 +863,7 @@ Each metric is scored 0-10 by Kimi K2.5 with a grading prompt and reasoning.
 - **Factual lookup**: Direct answers from a single source
 - **Multi-hop reasoning**: Combining information from multiple chunks
 - **Ambiguous queries**: Should trigger clarifying questions
-- **Unanswerable queries**: Outside the corpus — should refuse gracefully
+- **Unanswerable queries**: Outside the corpus --should refuse gracefully
 
 **Format** (`evaluation/test_set.json`):
 ```json
@@ -825,44 +914,24 @@ async def run_evaluation(test_set_path: str):
 - Python 3.9+
 - [UV](https://github.com/astral-sh/uv)
 - Terraform 1.7+
-- Azure CLI
-- Databricks CLI
+- Azure CLI (`az login`)
+- Databricks CLI (authenticates automatically via Azure CLI)
 
 ### Quick Start
 
-**1. Clone and install**
 ```bash
-git clone https://github.com/your-org/enterprise-rag-architecture.git
+# 1. Clone and install
+git clone https://github.com/Thimows/enterprise-rag-architecture.git
 cd enterprise-rag-architecture
 npm install
-```
 
-**2. Provision Azure resources**
-```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your Azure subscription ID
-terraform init && terraform apply
-```
+# 2. Provision Azure resources, generate .env files, create search index, deploy bundle
+./scripts/setup.sh
 
-**3. Configure environment variables**
-```bash
-# Copy Terraform outputs to .env files
-cd ../apps/api && cp .env.example .env
-cd ../apps/web && cp .env.example .env.local
-```
-
-**4. Deploy Databricks ingestion jobs**
-```bash
-cd ../../databricks
-databricks bundle deploy --target dev
-databricks bundle run document_ingestion_job
-```
-
-**5. Start development**
-```bash
-cd ..
+# 3. Start development (runs both API and web server)
 npm run dev
-# FastAPI → http://localhost:8000
-# Next.js → http://localhost:3000
+# FastAPI  -> http://localhost:8000
+# Next.js  -> http://localhost:3000
 ```
+
+The setup script handles everything in one command: Terraform provisioning (all Azure resources including Databricks workspace), `.env` file generation from Terraform outputs, Azure AI Search index creation, Databricks secrets configuration (via Azure CLI token), and bundle deployment. It is idempotent and safe to re-run.

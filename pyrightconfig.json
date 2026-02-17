@@ -1,0 +1,12 @@
+{
+  "executionEnvironments": [
+    {
+      "root": "databricks",
+      "reportUndefinedVariable": "none",
+      "reportMissingModuleSource": false
+    },
+    {
+      "root": "apps/api"
+    }
+  ]
+}
