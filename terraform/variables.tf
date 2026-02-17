@@ -32,3 +32,9 @@ variable "project_prefix" {
   default     = "rag"
 }
 
+variable "databricks_sku" {
+  description = "SKU tier for Azure Databricks workspace (standard, premium, or trial)"
+  type        = string
+  default     = "premium"
+}
+

@@ -1,15 +1,15 @@
 # Enterprise RAG Architecture
 
-A production-grade Retrieval-Augmented Generation system built for enterprise environments. Uses Azure AI Foundry (Kimi K2.5 for inference, text-embedding-3-large for embeddings), Azure AI Search for hybrid retrieval and Databricks for automated document ingestion and chunking workflows.
+A production-grade Retrieval-Augmented Generation system built for enterprise environments. Uses Azure AI Foundry (Kimi K2.5 for inference, text-embedding-3-large for embeddings), Azure AI Search for hybrid retrieval and Azure Databricks for automated document ingestion and chunking workflows.
 
-All data stays within your Azure tenant. No external API calls, no third-party logging, no data leaving your private environment.
+The entire stack runs inside a single Azure tenant — compute, storage, AI models and data pipelines. No external API calls, no third-party logging, no data leaving your private environment.
 
 <!-- TODO: Add screenshot of the chat interface -->
 <!-- ![Chat Interface](docs/assets/chat-interface.png) -->
 
 ## What This Does
 
-Users upload internal documents (PDF, Word, TXT) which get parsed, chunked and embedded through a Databricks pipeline. The system then answers questions about those documents through a chat interface with real-time streaming, inline citations and full source traceability.
+Users upload internal documents (PDF, Word, TXT) which get parsed, chunked and embedded through an Azure Databricks pipeline. The system then answers questions about those documents through a chat interface with real-time streaming, inline citations and full source traceability.
 
 Every answer includes numbered citation bubbles that link back to the exact source. Hovering a citation highlights the relevant text and shows a tooltip with the source document and page. Clicking opens an artifact panel with a document viewer scrolled to the cited passage.
 
@@ -19,17 +19,24 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 ## Architecture
 
 ```
-Documents (PDF/Word/TXT)
-        |
-        v
-  Databricks Jobs ──────> Azure AI Search
-  (parse, chunk, embed)    (vector + keyword + semantic index)
-                                    |
-                                    v
-  Next.js  <──────>  FastAPI  <──────>  Azure AI Foundry
-  (chat UI,          (query rewrite,    (Kimi K2.5,
-   streaming,         reranking,         text-embedding-3-large)
-   citations)         generation)
+┌─── Azure Tenant ───────────────────────────────────────────────────────┐
+│                                                                        │
+│  Documents (PDF/Word/TXT)                                              │
+│          |                                                             │
+│          v                                                             │
+│    Azure Databricks ──────> Azure AI Search                            │
+│    (parse, chunk, embed)    (vector + keyword + semantic index)        │
+│                                      |                                 │
+│                                      v                                 │
+│    Next.js  <──────>  FastAPI  <──────>  Azure AI Foundry              │
+│    (chat UI,          (query rewrite,    (Kimi K2.5,                   │
+│     streaming,         reranking,         text-embedding-3-large)      │
+│     citations)         generation)                                     │
+│                                                                        │
+│    Azure Blob Storage          Azure Document Intelligence             │
+│    (document store)            (PDF/DOCX parsing)                      │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Key Features
@@ -75,8 +82,8 @@ Documents (PDF/Word/TXT)
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Vercel Streamdown |
 | Backend | FastAPI, Python 3.9+, Pydantic, Sentence Transformers |
 | AI Services | Azure AI Foundry (Kimi K2.5, text-embedding-3-large), Azure AI Search, Azure Document Intelligence |
-| Ingestion | Databricks Jobs (serverless compute) via Asset Bundles, semantic chunking |
-| Infrastructure | Terraform, Azure Storage Account |
+| Ingestion | Azure Databricks (premium tier), Databricks Asset Bundles, semantic chunking |
+| Infrastructure | Terraform (all Azure resources incl. Databricks workspace), Azure Storage Account |
 | Monorepo | Turborepo, npm workspaces, shared ESLint and TypeScript configs |
 
 ### Model Configuration
@@ -115,7 +122,7 @@ enterprise-rag-architecture/
     web/          Next.js frontend (chat UI, citations, artifact panel)
   packages/
     ui/           Shared React components
-  databricks/     Ingestion pipeline (parsing, chunking, embedding, indexing)
+  databricks/     Azure Databricks ingestion pipeline (parsing, chunking, embedding, indexing)
   terraform/      Azure infrastructure as code
   evaluation/     LLM-as-judge test set and evaluation runner
   docs/           Architecture plan and documentation
@@ -136,16 +143,13 @@ Install the required tools for your platform:
 | Azure CLI | `brew install azure-cli` | `winget install Microsoft.AzureCLI` |
 | Databricks CLI | `brew tap databricks/tap && brew install databricks` | `winget install Databricks.DatabricksCLI` |
 
-After installing, log in and configure:
+After installing, log in to Azure:
 
 ```bash
 az login
-databricks configure
-# When prompted for the host, enter your Databricks workspace URL:
-# https://<your-workspace>.cloud.databricks.com
-# When prompted for a personal access token, generate one in Databricks:
-# User icon → Settings → Developer → Access tokens → Generate new token
 ```
+
+The Databricks CLI authenticates automatically through your Azure login — no separate configuration needed. The setup script reads the workspace URL from Terraform and uses your Azure credentials.
 
 ### Setup
 
@@ -155,7 +159,7 @@ git clone https://github.com/Thimows/enterprise-rag-architecture.git
 cd enterprise-rag-architecture
 npm install
 
-# 2. Provision Azure, generate .env files, configure Databricks secrets, deploy bundle
+# 2. Provision Azure resources (incl. Databricks workspace), generate .env files, deploy bundle
 ./scripts/setup.sh
 
 # 3. Start development (runs both API and web server)
@@ -171,6 +175,7 @@ The FastAPI server starts at `http://localhost:8000` and the Next.js app at `htt
 Designed for enterprise environments where data privacy and compliance are non-negotiable.
 
 - All documents and queries stay within your private Azure tenant
+- Azure Databricks workspace runs inside your Azure subscription (not external SaaS)
 - No data sent to public AI services or external logging
 - RBAC with Azure Managed Identities (no credentials in code)
 - Encryption at rest and in transit (TLS 1.2+)

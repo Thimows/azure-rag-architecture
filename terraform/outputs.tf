@@ -23,10 +23,6 @@ output "azure_ai_embedding_deployment" {
   value = module.ai_foundry.embedding_deployment_name
 }
 
-output "azure_ai_project_name" {
-  value = module.ai_foundry.project_name
-}
-
 output "azure_search_endpoint" {
   value = module.azure_search.endpoint
 }
@@ -52,4 +48,12 @@ output "document_intelligence_endpoint" {
 output "document_intelligence_key" {
   value     = module.document_intelligence.primary_key
   sensitive = true
+}
+
+output "databricks_workspace_url" {
+  value = module.databricks.workspace_url
+}
+
+output "databricks_workspace_id" {
+  value = module.databricks.workspace_id
 }

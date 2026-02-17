@@ -40,3 +40,12 @@ module "document_intelligence" {
   location            = azurerm_resource_group.main.location
   project_prefix      = var.project_prefix
 }
+
+module "databricks" {
+  source = "./modules/databricks"
+
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  project_prefix      = "${var.project_prefix}-${random_id.suffix.hex}"
+  sku                 = var.databricks_sku
+}

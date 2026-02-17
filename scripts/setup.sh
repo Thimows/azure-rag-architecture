@@ -59,22 +59,6 @@ else
   err "Log in to Azure, then re-run this script."
 fi
 
-# ─── Check Databricks auth ──────────────────────────────────────────
-if databricks auth describe &>/dev/null 2>&1; then
-  ok "Databricks: configured"
-else
-  warn "Databricks CLI is not configured."
-  echo ""
-  echo "  Run this command to configure:"
-  echo "    databricks configure"
-  echo ""
-  echo "  You will be prompted for:"
-  echo "    Host:  Your workspace URL (https://<workspace>.cloud.databricks.com)"
-  echo "    Token: Generate one in Databricks → User icon → Settings → Developer → Access tokens"
-  echo ""
-  err "Configure Databricks, then re-run this script."
-fi
-
 # ─── Step 1: Terraform ──────────────────────────────────────────────
 info "Step 1/4 — Provisioning Azure resources with Terraform..."
 
@@ -87,7 +71,7 @@ if [ ! -f terraform.tfvars ]; then
   echo "    Resource group       = rg-enterprise-rag"
   echo "    Location             = swedencentral"
   echo "    Storage account      = stenterpriserag"
-  echo "    Foundry project      = rag-<id>-project"
+  echo "    Databricks SKU       = premium"
   echo ""
   echo "    Chat model           = Kimi K2.5 (Moonshot AI)"
   echo "    Embedding model      = text-embedding-3-large (v1)"
@@ -143,6 +127,12 @@ ok "Created apps/web/.env.local"
 
 # ─── Step 3: Databricks secrets ─────────────────────────────────────
 info "Step 3/4 — Configuring Databricks secrets (writing 10 secrets)..."
+
+# Authenticate Databricks CLI using the Azure-managed workspace
+DATABRICKS_HOST=$(get_output databricks_workspace_url)
+DATABRICKS_TOKEN=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --query accessToken -o tsv)
+export DATABRICKS_HOST DATABRICKS_TOKEN
+ok "Databricks: authenticated via Azure CLI (${DATABRICKS_HOST})"
 
 SCOPE="rag-ingestion"
 

@@ -7,3 +7,4 @@ project_prefix       = "rag"
 # chat_model_name      = "Kimi-K2.5"
 # embedding_model_name = "text-embedding-3-large"
 # search_service_sku   = "free"  (default)
+# databricks_sku       = "premium"  (default)
