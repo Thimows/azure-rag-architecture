@@ -338,7 +338,8 @@ targets:
 ```python
 @router.post("/chat/stream")
 async def chat_stream(request: ChatRequest):
-    # 1. Query understanding and rewriting
+    # 1. Query rewriting -- use history to resolve references
+    #    "what about the second one?" -> standalone query
     optimized_query = await rewrite_query(
         query=request.query,
         conversation_history=request.history
@@ -351,7 +352,7 @@ async def chat_stream(request: ChatRequest):
         filters=request.filters
     )
 
-    # 3. Rerank (optional --cross-encoder vs Azure semantic ranking)
+    # 3. Rerank (optional -- cross-encoder vs Azure semantic ranking)
     if settings.RERANKING_ENABLED:
         reranked_chunks = await rerank_chunks(
             query=optimized_query,
@@ -362,10 +363,14 @@ async def chat_stream(request: ChatRequest):
         reranked_chunks = search_results[:10]
 
     # 4. Generate answer with citations (streaming)
+    #    Includes conversation history (capped at last N turns) for
+    #    natural conversational flow + retrieved chunks for grounding.
+    #    History is used for tone/continuity, chunks are the source of truth.
     return StreamingResponse(
         generate_answer_stream(
             query=request.query,
             chunks=reranked_chunks,
+            conversation_history=request.history[-MAX_HISTORY_TURNS:],
             instructions=SYSTEM_PROMPT
         ),
         media_type="text/event-stream"
@@ -426,30 +431,33 @@ Key components:
  User types question
         │
         ▼
- 1. QUERY REWRITING (FastAPI)
-    Analyze history, resolve pronouns, expand abbreviations
+ 1. QUERY REWRITING (FastAPI + Kimi K2.5)
+    Use conversation history to resolve pronouns, expand abbreviations
+    Produce a standalone query for retrieval
         │
         ▼
  2. EMBEDDING GENERATION
-    Azure AI Foundry text-embedding-3-large → 3072-dim vector
+    Azure AI Foundry text-embedding-3-large -> 3072-dim vector
         │
         ▼
  3. HYBRID SEARCH (Azure AI Search)
     Vector search (cosine) + Keyword search (BM25) + Semantic ranking
-    RRF fusion → Top 50 chunks
+    RRF fusion -> Top 50 chunks
         │
         ▼
  4. RERANKING (optional, toggleable)
     Azure semantic ranking is the default reranker.
     Optional cross-encoder reranking for benchmarking against Azure's built-in ranking.
-    Score each query-chunk pair → Top 10 most relevant
+    Score each query-chunk pair -> Top 10 most relevant
         │
         ▼
  5. CONTEXT PREPARATION
     Format chunks with [1], [2], ... identifiers + metadata
         │
         ▼
- 6. ANSWER GENERATION (Azure AI Foundry --Kimi K2.5)
+ 6. ANSWER GENERATION (Azure AI Foundry -- Kimi K2.5)
+    Send: system prompt + conversation history (last N turns) + chunks + query
+    History provides conversational continuity, chunks are the source of truth
     Stream response with inline citations [1][2]
         │
         ▼
@@ -557,12 +565,14 @@ Delta tables use append mode throughout. Each job run only touches the documents
 
 | Task | Details |
 |------|---------|
-| Query rewriting | Conversational rewriting with Kimi K2.5, follow-up handling |
+| Query rewriting | Use conversation history + Kimi K2.5 to rewrite follow-ups into standalone queries for retrieval |
 | Hybrid search | Azure AI Search SDK, vector + keyword + semantic, RRF fusion, filtering |
-| Reranking (optional) | Sentence Transformers cross-encoder (`ms-marco-MiniLM-L-12-v2`) --toggleable via config, benchmarked against Azure semantic ranking |
-| Answer generation | Kimi K2.5 streaming, system prompt with citation instructions, SSE |
+| Reranking (optional) | Sentence Transformers cross-encoder (`ms-marco-MiniLM-L-12-v2`) -- toggleable via config, benchmarked against Azure semantic ranking |
+| Answer generation | Kimi K2.5 streaming with conversation history (capped at last N turns) + retrieved chunks. History provides conversational continuity, chunks are the source of truth. System prompt enforces citation rules to prevent history-based hallucination. SSE streaming. |
 | Citation extraction | Parse `[1]` `[2]` from output, map to source chunks |
 | API endpoints | `/chat/stream`, `/chat/query`, `/documents`, `/documents/{id}/chunks` |
+
+**Conversation history approach**: Both query rewriting and answer generation receive conversation history. Query rewriting uses it to produce a standalone retrieval query. Answer generation uses it (capped at last N turns) for natural conversational flow, while the system prompt strictly enforces that all factual claims must cite retrieved chunks. This prevents the model from hallucinating based on prior turns.
 
 **Deliverables**: Working chat endpoint with retrieval, generation, and inline citations
 
