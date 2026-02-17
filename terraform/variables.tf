@@ -38,3 +38,15 @@ variable "databricks_sku" {
   default     = "premium"
 }
 
+variable "postgresql_server_name" {
+  description = "Name prefix for the PostgreSQL Flexible Server"
+  type        = string
+  default     = "rag-pg"
+}
+
+variable "postgresql_admin_password" {
+  description = "Administrator password for PostgreSQL Flexible Server"
+  type        = string
+  sensitive   = true
+}
+

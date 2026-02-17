@@ -49,3 +49,13 @@ module "databricks" {
   project_prefix      = "${var.project_prefix}-${random_id.suffix.hex}"
   sku                 = var.databricks_sku
 }
+
+module "postgresql" {
+  source = "./modules/postgresql"
+
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = azurerm_resource_group.main.location
+  server_name            = var.postgresql_server_name
+  suffix                 = random_id.suffix.hex
+  administrator_password = var.postgresql_admin_password
+}

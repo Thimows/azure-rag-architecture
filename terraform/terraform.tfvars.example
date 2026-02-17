@@ -3,6 +3,9 @@ location             = "swedencentral"
 storage_account_name = "stenterpriserag"
 project_prefix       = "rag"
 
+# PostgreSQL (required -- no default)
+postgresql_admin_password = "your-secure-password"
+
 # AI model defaults (override if needed)
 # chat_model_name      = "Kimi-K2.5"
 # embedding_model_name = "text-embedding-3-large"

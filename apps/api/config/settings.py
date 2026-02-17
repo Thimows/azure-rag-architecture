@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
+    DATABASE_URL: str = ""
+
     # RAG Pipeline
     RERANKING_ENABLED: bool = True
     MAX_HISTORY_TURNS: int = 10

@@ -57,3 +57,25 @@ output "databricks_workspace_url" {
 output "databricks_workspace_id" {
   value = module.databricks.workspace_id
 }
+
+output "postgresql_host" {
+  value = module.postgresql.host
+}
+
+output "postgresql_database" {
+  value = module.postgresql.database_name
+}
+
+output "postgresql_user" {
+  value = module.postgresql.administrator_login
+}
+
+output "postgresql_password" {
+  value     = module.postgresql.administrator_password
+  sensitive = true
+}
+
+output "postgresql_connection_string" {
+  value     = module.postgresql.connection_string
+  sensitive = true
+}

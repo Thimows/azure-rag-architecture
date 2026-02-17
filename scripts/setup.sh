@@ -73,6 +73,8 @@ if [ ! -f terraform.tfvars ]; then
   echo "    Storage account      = stenterpriserag"
   echo "    Databricks SKU       = premium"
   echo ""
+  echo "    PostgreSQL password   = (set in terraform.tfvars)"
+  echo ""
   echo "    Chat model           = Kimi K2.5 (Moonshot AI)"
   echo "    Embedding model      = text-embedding-3-large (v1)"
   echo "    Search SKU           = free"
@@ -116,12 +118,15 @@ AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=$(get_output document_intelligence_endpoint
 AZURE_DOCUMENT_INTELLIGENCE_KEY=$(get_output document_intelligence_key)
 
 CORS_ORIGINS=["http://localhost:3000"]
+
+DATABASE_URL=postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=require
 EOF
 ok "Created apps/api/.env"
 
 # apps/web/.env.local
 cat > "$ROOT_DIR/apps/web/.env.local" <<EOF
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+DATABASE_URL=postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=require
 EOF
 ok "Created apps/web/.env.local"
 
