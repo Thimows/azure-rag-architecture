@@ -7,7 +7,7 @@ project_prefix       = "rag"
 postgresql_admin_password = "your-secure-password"
 
 # AI model defaults (override if needed)
-# chat_model_name      = "Kimi-K2.5"
+# chat_model_name      = "Mistral-Large-3"
 # embedding_model_name = "text-embedding-3-large"
 # search_service_sku   = "basic"  (default, ~$75/month, required for semantic search)
 # databricks_sku       = "premium"  (default)

@@ -1,6 +1,6 @@
 # Enterprise RAG Architecture
 
-A production-grade Retrieval-Augmented Generation system built for enterprise environments. Uses Azure AI Foundry (Kimi K2.5 for inference, text-embedding-3-large for embeddings), Azure AI Search for hybrid retrieval and Azure Databricks for automated document ingestion and chunking workflows.
+A production-grade Retrieval-Augmented Generation system built for enterprise environments. Uses Azure AI Foundry (Mistral Large 3 for answer generation, GPT-5 Nano for query rewriting, text-embedding-3-large for embeddings), Azure AI Search for hybrid retrieval and Azure Databricks for automated document ingestion and chunking workflows.
 
 The entire stack runs inside a single Azure tenant — compute, storage, AI models and data pipelines. No external API calls, no third-party logging, no data leaving your private environment.
 
@@ -29,9 +29,9 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 │                                      |                                 │
 │                                      v                                 │
 │    Next.js  <──────>  FastAPI  <──────>  Azure AI Foundry              │
-│    (chat UI,          (query rewrite,    (Kimi K2.5,                   │
-│     streaming,         reranking,         text-embedding-3-large)      │
-│     citations)         generation)                                     │
+│    (chat UI,          (query rewrite,    (Mistral Large 3,             │
+│     streaming,         reranking,         GPT-5 Nano,                  │
+│     citations)         generation)        text-embedding-3-large)      │                                     │
 │                                                                        │
 │    Azure Blob Storage          Azure Document Intelligence             │
 │    (document store)            (PDF/DOCX parsing)                      │
@@ -49,6 +49,7 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 - For high-volume production workloads, the pipeline can be replaced with Databricks Auto Loader for real-time streaming ingestion via Azure Event Grid
 
 **RAG Pipeline**
+- Query rewriting via GPT-5 Nano (with `reasoning_effort: low`) to resolve follow-up questions into standalone retrieval queries using conversation history
 - Document parsing via Azure Document Intelligence with layout analysis
 - Semantic chunking that preserves document structure and sentence boundaries
 - Hybrid search combining vector, keyword and semantic ranking with RRF fusion
@@ -67,7 +68,7 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 - Citations parsed and rendered as they stream in
 
 **Evaluation**
-- Custom LLM-as-judge pipeline using Kimi K2.5
+- Custom LLM-as-judge pipeline using Mistral Large 3
 - Three metrics: faithfulness, relevance, completeness
 - Automated evaluation against a curated test set
 
@@ -88,7 +89,7 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 |-------|-----------|
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Vercel Streamdown |
 | Backend | FastAPI, Python 3.9+, Pydantic, Sentence Transformers |
-| AI Services | Azure AI Foundry (Kimi K2.5, text-embedding-3-large), Azure AI Search, Azure Document Intelligence |
+| AI Services | Azure AI Foundry (Mistral Large 3, GPT-5 Nano, text-embedding-3-large), Azure AI Search, Azure Document Intelligence |
 | Ingestion | Azure Databricks (premium tier), Databricks Asset Bundles, semantic chunking |
 | Infrastructure | Terraform (all Azure resources incl. Databricks workspace), Azure Storage Account |
 | Monorepo | Turborepo, npm workspaces, shared ESLint and TypeScript configs |
@@ -97,18 +98,18 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 
 This project uses [Direct from Azure](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure) models — third-party models hosted and managed by Microsoft on Azure infrastructure. Unlike marketplace models (which require separate vendor agreements and portal-based consent flows), Direct from Azure models are purchased through Azure, deployed via Terraform and covered by a single Microsoft license.
 
-The default chat model is **Kimi K2.5** (Moonshot AI). You can swap it for any other Direct from Azure chat model by changing `chat_model_format` and `chat_model_name` in your `terraform.tfvars`:
+The default chat model is **Mistral Large 3** (Mistral AI). You can swap it for any other Direct from Azure chat model by changing `chat_model_format` and `chat_model_name` in your `terraform.tfvars`:
 
 ```hcl
 # Third-party models (available on all subscriptions)
-chat_model_format = "MoonshotAI"       # default
-chat_model_name   = "Kimi-K2.5"       # default
+chat_model_format = "Mistral AI"       # default
+chat_model_name   = "Mistral-Large-3"  # default
 
 chat_model_format = "DeepSeek"
 chat_model_name   = "DeepSeek-V3.2"
 
-chat_model_format = "Mistral AI"
-chat_model_name   = "Mistral-Large-3"
+chat_model_format = "MoonshotAI"
+chat_model_name   = "Kimi-K2.5"
 
 chat_model_format = "xAI"
 chat_model_name   = "grok-4-fast-reasoning"
@@ -117,6 +118,8 @@ chat_model_name   = "grok-4-fast-reasoning"
 chat_model_format = "OpenAI"
 chat_model_name   = "gpt-5.2-chat"
 ```
+
+Query rewriting uses **GPT-5 Nano** (OpenAI via Azure) with `reasoning_effort: low` for ultra-fast, low-latency inference. This lightweight model rewrites follow-up questions into standalone retrieval queries using conversation history, keeping the pipeline fast without sacrificing quality.
 
 Embeddings use **text-embedding-3-large** (OpenAI via Azure), which is also Direct from Azure.
 

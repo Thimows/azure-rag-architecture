@@ -39,7 +39,7 @@ export function FolderCreateDialog({ onCreated }: FolderCreateDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm">
-          <Plus className="mr-2 size-4" />
+          <Plus className="size-4" />
           New Folder
         </Button>
       </DialogTrigger>

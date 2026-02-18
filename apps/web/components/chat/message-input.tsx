@@ -46,7 +46,7 @@ export function MessageInput({
           onKeyDown={handleKeyDown}
           placeholder="Ask a question..."
           rows={1}
-          className="min-h-[44px] max-h-[200px] resize-none"
+          className="min-h-7.5 max-h-[200px] resize-none"
           disabled={disabled}
         />
         {isStreaming ? (

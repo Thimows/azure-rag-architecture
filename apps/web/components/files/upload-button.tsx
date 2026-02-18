@@ -52,7 +52,7 @@ export function UploadButton({
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
       >
-        <Upload className="mr-2 size-4" />
+        <Upload className="size-4" />
         {uploading ? "Uploading..." : "Upload"}
       </Button>
     </>

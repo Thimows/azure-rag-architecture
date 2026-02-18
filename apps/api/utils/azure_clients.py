@@ -19,6 +19,15 @@ def get_chat_client() -> ChatCompletionsClient:
 
 
 @lru_cache
+def get_rewrite_client() -> ChatCompletionsClient:
+    return ChatCompletionsClient(
+        endpoint=f"https://{settings.AZURE_AI_RESOURCE_NAME}.services.ai.azure.com/models",
+        credential=AzureKeyCredential(settings.AZURE_AI_KEY),
+        model=settings.AZURE_AI_REWRITE_DEPLOYMENT,
+    )
+
+
+@lru_cache
 def get_embeddings_client() -> EmbeddingsClient:
     return EmbeddingsClient(
         endpoint=f"https://{settings.AZURE_AI_RESOURCE_NAME}.services.ai.azure.com/models",

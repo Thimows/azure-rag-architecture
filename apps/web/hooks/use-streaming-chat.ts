@@ -19,6 +19,8 @@ export function useStreamingChat({
   const [citations, setCitations] = useState<Citation[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState("")
+  const [thinkingContent, setThinkingContent] = useState("")
+  const [isThinking, setIsThinking] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
 
   const sendMessage = useCallback(
@@ -29,6 +31,8 @@ export function useStreamingChat({
       const history = [...messages, userMessage]
       setMessages(history)
       setStreamingContent("")
+      setThinkingContent("")
+      setIsThinking(false)
       setCitations([])
       setIsStreaming(true)
 
@@ -38,6 +42,7 @@ export function useStreamingChat({
       abortRef.current = controller
 
       let accumulated = ""
+      let accumulatedThinking = ""
       const newCitations: Citation[] = []
 
       try {
@@ -49,7 +54,13 @@ export function useStreamingChat({
           },
           controller.signal,
         )) {
-          if (event.type === "chunk") {
+          if (event.type === "thinking") {
+            setIsThinking(true)
+            accumulatedThinking += event.content
+            setThinkingContent(accumulatedThinking)
+          } else if (event.type === "thinking_done") {
+            setIsThinking(false)
+          } else if (event.type === "chunk") {
             accumulated += event.content
             setStreamingContent(accumulated)
           } else if (event.type === "citation") {
@@ -87,6 +98,7 @@ export function useStreamingChat({
         }
       } finally {
         setIsStreaming(false)
+        setIsThinking(false)
         abortRef.current = null
       }
     },
@@ -104,6 +116,8 @@ export function useStreamingChat({
     setCitations,
     isStreaming,
     streamingContent,
+    thinkingContent,
+    isThinking,
     sendMessage,
     stop,
   }

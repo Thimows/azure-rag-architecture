@@ -4,15 +4,26 @@ import { trpc } from "@/lib/trpc/client"
 import { ChatInterface } from "@/components/chat/chat-interface"
 import { Skeleton } from "@/components/ui/skeleton"
 
-export function ChatView({ chatId, pendingMessage }: { chatId: string; pendingMessage?: string }) {
+export function ChatView({ chatId }: { chatId: string }) {
   const { data, isPending } = trpc.chat.getMessages.useQuery({ chatId })
 
   if (isPending) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-8">
-        <Skeleton className="h-12 w-3/4" />
-        <Skeleton className="h-8 w-1/2 self-end" />
-        <Skeleton className="h-16 w-3/4" />
+      <div className="flex flex-1 overflow-y-auto">
+        <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-end gap-4 px-4 py-4">
+          <div className="flex justify-end">
+            <Skeleton className="h-10 w-48 rounded-2xl" />
+          </div>
+          <div className="flex justify-start">
+            <Skeleton className="h-24 w-72 rounded-2xl" />
+          </div>
+          <div className="flex justify-end">
+            <Skeleton className="h-10 w-56 rounded-2xl" />
+          </div>
+          <div className="flex justify-start">
+            <Skeleton className="h-16 w-64 rounded-2xl" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -34,7 +45,6 @@ export function ChatView({ chatId, pendingMessage }: { chatId: string; pendingMe
         ...c,
         documentUrl: "",
       }))}
-      pendingMessage={pendingMessage}
     />
   )
 }

@@ -23,7 +23,7 @@ export function CitationBubble({
   const bubble = (
     <button
       type="button"
-      className="mx-0.5 inline-flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/20"
+      className="mx-0.5 inline-flex size-5 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/20"
       onMouseEnter={() => citation && onHover?.(citation)}
       onMouseLeave={() => onHover?.(null)}
       onClick={() => citation && onClick?.(citation)}

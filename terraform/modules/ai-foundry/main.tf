@@ -27,11 +27,29 @@ resource "azurerm_cognitive_deployment" "chat" {
   }
 }
 
+resource "azurerm_cognitive_deployment" "rewrite" {
+  name                 = var.rewrite_deployment_name
+  cognitive_account_id = azurerm_cognitive_account.ai_foundry.id
+
+  depends_on = [azurerm_cognitive_deployment.chat]
+
+  model {
+    format  = "OpenAI"
+    name    = var.rewrite_model_name
+    version = var.rewrite_model_version
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = 30
+  }
+}
+
 resource "azurerm_cognitive_deployment" "embedding" {
   name                 = var.embedding_deployment_name
   cognitive_account_id = azurerm_cognitive_account.ai_foundry.id
 
-  depends_on = [azurerm_cognitive_deployment.chat]
+  depends_on = [azurerm_cognitive_deployment.rewrite]
 
   model {
     format  = "OpenAI"

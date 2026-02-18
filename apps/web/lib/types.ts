@@ -31,11 +31,25 @@ export interface SSECitationEvent {
   }
 }
 
+export interface SSEThinkingEvent {
+  type: "thinking"
+  content: string
+}
+
+export interface SSEThinkingDoneEvent {
+  type: "thinking_done"
+}
+
 export interface SSEDoneEvent {
   type: "done"
 }
 
-export type SSEEvent = SSEChunkEvent | SSECitationEvent | SSEDoneEvent
+export type SSEEvent =
+  | SSEChunkEvent
+  | SSECitationEvent
+  | SSEThinkingEvent
+  | SSEThinkingDoneEvent
+  | SSEDoneEvent
 
 export interface ChatStreamRequest {
   organization_id: string

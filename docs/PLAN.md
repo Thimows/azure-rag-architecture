@@ -97,7 +97,7 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 | **Azure AI Search** | Vector + keyword + semantic hybrid search, filtering, index management |
 | **FastAPI Backend** | Query understanding, retrieval orchestration, cross-encoder reranking, answer generation with citations, streaming responses |
 | **Next.js Frontend** | Chat interface, markdown streaming (Streamdown), citation bubbles, source highlighting, document viewer |
-| **Azure AI Foundry** | Chat completions (Kimi K2.5), text embeddings (`text-embedding-3-large`), evaluation (LLM-as-judge) |
+| **Azure AI Foundry** | Chat completions (Kimi K2.5), query rewriting (GPT-5 Nano), text embeddings (`text-embedding-3-large`), evaluation (LLM-as-judge) |
 | **Terraform** | Infrastructure provisioning (all Azure resources including Databricks workspace and PostgreSQL), reproducible deployments |
 
 ---
@@ -122,7 +122,8 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 | **FastAPI** | 0.128+ | High-performance async Python framework with OpenAPI docs |
 | **Python** | 3.9+ | Azure SDK compatibility, async/await |
 | **UV** | Latest | Fast Python package manager |
-| **Azure AI Inference SDK** | Latest | Kimi K2.5 (Moonshot AI) via Azure AI Foundry |
+| **Azure AI Inference SDK** | Latest | Kimi K2.5 (Moonshot AI) for answer generation via Azure AI Foundry |
+| **Azure AI Inference SDK** | Latest | GPT-5 Nano for query rewriting (low reasoning effort) via Azure AI Foundry |
 | **Azure AI Inference SDK** | Latest | Embeddings via Azure AI Foundry |
 | **Azure AI Search SDK** | Latest | Direct SDK for hybrid search |
 | **Sentence Transformers** | Latest | Cross-encoder models for reranking |
@@ -142,7 +143,7 @@ Unlike framework-heavy implementations, this showcase uses **direct SDK integrat
 | Technology | Version | Justification |
 |------------|---------|---------------|
 | **Terraform** | 1.7+ | Infrastructure-as-code for all Azure resources including Databricks workspace |
-| **Azure AI Foundry** | Kimi K2.5, text-embedding-3-large | Chat and embedding models (Direct from Azure) |
+| **Azure AI Foundry** | Kimi K2.5, GPT-5 Nano, text-embedding-3-large | Chat (Kimi K2.5), query rewriting (GPT-5 Nano), and embedding models — all Direct from Azure |
 | **Azure AI Search** | Free/Standard tier | Vector + keyword + semantic ranking |
 | **Azure Databricks** | Premium tier | Managed Spark workspace for ingestion pipeline |
 | **Azure Document Intelligence** | Standard | Document parsing with layout analysis |
@@ -438,9 +439,10 @@ Key components:
  User types question
         │
         ▼
- 1. QUERY REWRITING (FastAPI + Kimi K2.5)
+ 1. QUERY REWRITING (FastAPI + GPT-5 Nano, reasoning_effort: low)
     Use conversation history to resolve pronouns, expand abbreviations
     Produce a standalone query for retrieval
+    Uses GPT-5 Nano for ultra-fast, low-latency inference
         │
         ▼
  2. EMBEDDING GENERATION
@@ -663,7 +665,7 @@ organization ──N:N──> user (via member)          document <──┘
 
 | Task | Status | Details |
 |------|--------|---------|
-| Terraform IaC | ✅ Done | Resource group, Azure AI Foundry (Kimi K2.5 + embeddings), Azure AI Search, Document Intelligence, Storage Account, Azure Databricks -- modular setup in `terraform/` with 5 modules |
+| Terraform IaC | ✅ Done | Resource group, Azure AI Foundry (Kimi K2.5 + GPT-5 Nano + embeddings), Azure AI Search, Document Intelligence, Storage Account, Azure Databricks -- modular setup in `terraform/` with 5 modules |
 | Monorepo setup | ✅ Done | `apps/api/package.json` added with `dev` script so `npm run dev` starts both Next.js and FastAPI concurrently via Turborepo |
 | FastAPI scaffold | ✅ Done | App entry with CORS, Pydantic settings, Azure SDK client factories, routers (health, chat, documents) under `/api/v1`, `.env.example` |
 | Next.js scaffold | ✅ Done | Tailwind CSS v4 with `@tailwindcss/postcss`, chat layout skeleton with header/message area/input bar, dark mode support, `.env.example` |
@@ -678,7 +680,7 @@ organization ──N:N──> user (via member)          document <──┘
 
 | Task | Status | Details |
 |------|--------|---------|
-| Provision Azure resources | ✅ Done | `./scripts/setup.sh` runs Terraform automatically -- AI Foundry (Kimi K2.5 + text-embedding-3-large), AI Search, Document Intelligence, Storage Account, Azure Databricks workspace all provisioned |
+| Provision Azure resources | ✅ Done | `./scripts/setup.sh` runs Terraform automatically -- AI Foundry (Kimi K2.5 + GPT-5 Nano + text-embedding-3-large), AI Search, Document Intelligence, Storage Account, Azure Databricks workspace all provisioned |
 | Configure `.env` files | ✅ Done | Setup script generates `apps/api/.env` and `apps/web/.env.local` from Terraform outputs |
 | Run database migrations | | Setup script runs `npx drizzle-kit push` inside `apps/web` to sync the Drizzle schema to the PostgreSQL database (creates all tables) |
 | Create search index | ✅ Done | Setup script runs `apps/api/scripts/create_search_index.py` to create/update the Azure AI Search index |
@@ -717,7 +719,7 @@ organization ──N:N──> user (via member)          document <──┘
 | Task | Status | Details |
 |------|--------|---------|
 | Multi-tenant data scoping | ✅ Done | All data scoped by `organization_id` (required) + `folder_id` (optional filter). Blob storage path: `{org_id}/{folder_id}/{filename}`. Search index has both as filterable fields. Databricks pipeline carries both through all notebooks via task values. BetterAuth (with organization plugin) will extract org from token in Phase 4 -- for now, `organization_id` is a request parameter. |
-| Query rewriting | ✅ Done | `services/query_service.py` -- Uses conversation history + Kimi K2.5 to rewrite follow-ups into standalone queries. Short-circuits if no history (no LLM call). `temperature=0.0` for deterministic output. |
+| Query rewriting | ✅ Done | `services/query_service.py` -- Uses GPT-5 Nano (with `reasoning_effort: low`) to rewrite follow-up questions into standalone retrieval queries using conversation history. GPT-5 Nano is optimized for ultra-fast, low-latency inference, making it ideal for this lightweight preprocessing step. Short-circuits if no history (no LLM call). `temperature=0.0` for deterministic output. Deployed via Terraform as a separate Azure AI Foundry deployment. |
 | Hybrid search | ✅ Done | `services/retrieval_service.py` -- Azure AI Search SDK with `VectorizedQuery` + `QueryType.SEMANTIC`. Always filters by `organization_id`, optionally by `folder_ids` and `document_names` via OData. Returns top 50 chunks sorted by semantic reranker score. |
 | Cross-encoder reranking | ✅ Done | `services/reranking_service.py` -- Sentence Transformers `cross-encoder/ms-marco-MiniLM-L-12-v2`, enabled by default (`RERANKING_ENABLED=true`). Lazy-loaded on first call. Scores each query-chunk pair and returns top K most relevant. |
 | Answer generation | ✅ Done | `services/generation_service.py` -- Kimi K2.5 streaming with conversation history (capped at last N turns) + retrieved chunks. System prompt enforces citation rules. SSE events: `chunk` → `citation` → `done`. Non-streaming variant for evaluation. |

@@ -1,16 +1,18 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { trpc } from "@/lib/trpc/client"
 import { ChatInterface } from "@/components/chat/chat-interface"
 import { generateId } from "@/lib/id"
 
 export function NewChatPage() {
-  const router = useRouter()
-  const { data: activeOrg } = authClient.useActiveOrganization()
+  const { data: activeOrg, isPending } = authClient.useActiveOrganization()
   const createChat = trpc.chat.create.useMutation()
   const utils = trpc.useUtils()
+
+  if (isPending) {
+    return <div className="flex flex-1" />
+  }
 
   if (!activeOrg) {
     return (
@@ -25,15 +27,12 @@ export function NewChatPage() {
     )
   }
 
-  async function handleFirstMessage(message: string) {
+  async function handleFirstMessage(message: string): Promise<string> {
     const chatId = generateId()
-    const title = message.slice(0, 80)
-
-    await createChat.mutateAsync({ id: chatId, title })
+    await createChat.mutateAsync({ id: chatId, title: message.slice(0, 80) })
     utils.chat.list.invalidate()
-
-    // Navigate with the pending message so ChatView can send it after mounting
-    router.replace(`/chat/${chatId}?q=${encodeURIComponent(message)}`)
+    window.history.replaceState(null, "", `/chat/${chatId}`)
+    return chatId
   }
 
   return (

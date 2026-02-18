@@ -3,7 +3,7 @@ from __future__ import annotations
 from azure.ai.inference.models import SystemMessage, UserMessage
 
 from models.chat_models import ConversationMessage
-from utils.azure_clients import get_chat_client
+from utils.azure_clients import get_rewrite_client
 
 REWRITE_SYSTEM_PROMPT = """You are a query rewriting assistant. Your job is to rewrite a follow-up question into a standalone question that can be used for document retrieval.
 
@@ -19,11 +19,11 @@ def rewrite_query(
     query: str,
     conversation_history: list[ConversationMessage],
 ) -> str:
-    """Rewrite a follow-up query into a standalone query using conversation history."""
+    """Rewrite a follow-up query into a standalone query using GPT-5 Nano (low reasoning)."""
     if not conversation_history:
         return query
 
-    client = get_chat_client()
+    client = get_rewrite_client()
 
     history_text = "\n".join(
         f"{msg.role}: {msg.content}" for msg in conversation_history
@@ -36,7 +36,10 @@ def rewrite_query(
         ),
     ]
 
-    response = client.complete(messages=messages, temperature=0.0, max_tokens=256)
+    response = client.complete(
+        messages=messages,
+        model_extras={"max_completion_tokens": 512, "reasoning_effort": "low"},
+    )
     content = response.choices[0].message.content
     rewritten = content.strip() if content else ""
     return rewritten if rewritten else query

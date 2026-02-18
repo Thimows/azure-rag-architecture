@@ -19,6 +19,10 @@ output "azure_ai_chat_deployment" {
   value = module.ai_foundry.chat_deployment_name
 }
 
+output "azure_ai_rewrite_deployment" {
+  value = module.ai_foundry.rewrite_deployment_name
+}
+
 output "azure_ai_embedding_deployment" {
   value = module.ai_foundry.embedding_deployment_name
 }

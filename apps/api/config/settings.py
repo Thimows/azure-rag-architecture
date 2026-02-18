@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     AZURE_AI_RESOURCE_NAME: str = ""
     AZURE_AI_KEY: str = ""
     AZURE_AI_CHAT_DEPLOYMENT: str = ""
+    AZURE_AI_REWRITE_DEPLOYMENT: str = ""
     AZURE_AI_EMBEDDING_DEPLOYMENT: str = ""
 
     AZURE_SEARCH_ENDPOINT: str = ""

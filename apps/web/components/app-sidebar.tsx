@@ -52,11 +52,9 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/">
-                    <SquarePen className="size-4" />
-                    <span>New Chat</span>
-                  </Link>
+                <SidebarMenuButton onClick={() => { router.push("/"); router.refresh() }}>
+                  <SquarePen className="size-4" />
+                  <span>New Chat</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -95,7 +93,7 @@ export function AppSidebar() {
                     router.refresh()
                   }}
                 >
-                  <LogOut className="mr-2 size-4" />
+                  <LogOut className="size-4" />
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>

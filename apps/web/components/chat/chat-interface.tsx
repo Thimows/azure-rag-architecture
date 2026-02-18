@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useCallback, useRef } from "react"
 import { trpc } from "@/lib/trpc/client"
 import { useStreamingChat } from "@/hooks/use-streaming-chat"
 import { MessageList } from "@/components/chat/message-list"
@@ -15,8 +15,7 @@ interface ChatInterfaceProps {
   chatId?: string
   initialMessages?: ChatMessage[]
   initialCitations?: Citation[]
-  onFirstMessage?: (message: string) => void
-  pendingMessage?: string
+  onFirstMessage?: (message: string) => Promise<string>
 }
 
 export function ChatInterface({
@@ -25,24 +24,28 @@ export function ChatInterface({
   initialMessages = [],
   initialCitations = [],
   onFirstMessage,
-  pendingMessage,
 }: ChatInterfaceProps) {
+  const chatIdRef = useRef(chatId)
+  chatIdRef.current = chatId
+
   const addMessage = trpc.chat.addMessage.useMutation()
 
   const handleUserMessage = useCallback(
     (content: string) => {
-      if (chatId) {
-        addMessage.mutate({ chatId, role: "user", content })
+      const id = chatIdRef.current
+      if (id) {
+        addMessage.mutate({ chatId: id, role: "user", content })
       }
     },
-    [chatId, addMessage],
+    [addMessage],
   )
 
   const handleAssistantComplete = useCallback(
     (content: string, citations: Citation[]) => {
-      if (chatId) {
+      const id = chatIdRef.current
+      if (id) {
         addMessage.mutate({
-          chatId,
+          chatId: id,
           role: "assistant",
           content,
           citations: citations.map((c) => ({
@@ -56,7 +59,7 @@ export function ChatInterface({
         })
       }
     },
-    [chatId, addMessage],
+    [addMessage],
   )
 
   const {
@@ -66,6 +69,8 @@ export function ChatInterface({
     setCitations,
     isStreaming,
     streamingContent,
+    thinkingContent,
+    isThinking,
     sendMessage,
     stop,
   } = useStreamingChat({
@@ -76,7 +81,6 @@ export function ChatInterface({
 
   const [hoveredCitation, setHoveredCitation] = useState<Citation | null>(null)
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null)
-  const pendingSent = useRef(false)
 
   // Initialize with existing messages
   if (initialMessages.length > 0 && messages.length === 0) {
@@ -84,18 +88,10 @@ export function ChatInterface({
     setCitations(initialCitations)
   }
 
-  // Auto-send pending message from new chat creation
-  useEffect(() => {
-    if (pendingMessage && !pendingSent.current) {
-      pendingSent.current = true
-      sendMessage(pendingMessage)
-    }
-  }, [pendingMessage, sendMessage])
-
-  function handleSend(query: string) {
+  async function handleSend(query: string) {
     if (messages.length === 0 && onFirstMessage) {
-      onFirstMessage(query)
-      return // Don't stream here — the chat page will handle it after navigation
+      const newChatId = await onFirstMessage(query)
+      chatIdRef.current = newChatId
     }
     sendMessage(query)
   }
@@ -113,6 +109,8 @@ export function ChatInterface({
           messages={messages}
           streamingContent={streamingContent}
           isStreaming={isStreaming}
+          thinkingContent={thinkingContent}
+          isThinking={isThinking}
           citations={lastAssistantCitations}
           onCitationHover={setHoveredCitation}
           onCitationClick={setSelectedCitation}

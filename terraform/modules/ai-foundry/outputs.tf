@@ -15,6 +15,10 @@ output "chat_deployment_name" {
   value = var.chat_deployment_name
 }
 
+output "rewrite_deployment_name" {
+  value = var.rewrite_deployment_name
+}
+
 output "embedding_deployment_name" {
   value = var.embedding_deployment_name
 }

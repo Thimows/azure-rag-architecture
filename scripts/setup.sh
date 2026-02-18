@@ -86,7 +86,8 @@ if [ ! -f terraform.tfvars ]; then
   echo ""
   echo "    PostgreSQL password   = (auto-generated, saved in terraform.tfvars)"
   echo ""
-  echo "    Chat model           = Kimi K2.5 (Moonshot AI)"
+  echo "    Chat model           = Mistral Large 3 (Mistral AI)"
+  echo "    Query rewrite model  = GPT-5 Nano (OpenAI)"
   echo "    Embedding model      = text-embedding-3-large (v1)"
   echo "    Search SKU           = basic (~\$75/month, required for semantic search)"
   echo ""
@@ -128,6 +129,7 @@ AZURE_AI_ENDPOINT=$(get_output azure_ai_endpoint)
 AZURE_AI_RESOURCE_NAME=$(get_output azure_ai_resource_name)
 AZURE_AI_KEY=$(get_output azure_ai_key)
 AZURE_AI_CHAT_DEPLOYMENT=$(get_output azure_ai_chat_deployment)
+AZURE_AI_REWRITE_DEPLOYMENT=$(get_output azure_ai_rewrite_deployment)
 AZURE_AI_EMBEDDING_DEPLOYMENT=$(get_output azure_ai_embedding_deployment)
 
 AZURE_SEARCH_ENDPOINT=$(get_output azure_search_endpoint)
