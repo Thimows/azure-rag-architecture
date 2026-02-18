@@ -6,6 +6,7 @@ import { FolderList } from "@/components/files/folder-list"
 import { FolderCreateDialog } from "@/components/files/folder-create-dialog"
 import { DocumentTable } from "@/components/files/document-table"
 import { UploadButton } from "@/components/files/upload-button"
+import { deleteDocument } from "@/lib/api-client"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -19,11 +20,24 @@ export function FilesClient({ organizationId }: { organizationId: string }) {
   const { data: documents, isPending: docsLoading } =
     trpc.document.list.useQuery(
       selectedFolder ? { folderId: selectedFolder } : undefined,
-      { enabled: !!selectedFolder },
+      {
+        enabled: !!selectedFolder,
+        refetchInterval: (query) => {
+          const docs = query.state.data
+          const hasActive = docs?.some(
+            (d) => d.status === "uploaded" || d.status === "processing",
+          )
+          return hasActive ? 3000 : false
+        },
+      },
     )
 
   const deleteFolder = trpc.folder.delete.useMutation({
     onSuccess: () => utils.folder.list.invalidate(),
+  })
+
+  const deleteDoc = trpc.document.delete.useMutation({
+    onSuccess: () => utils.document.list.invalidate(),
   })
 
   function handleDeleteFolder(id: string) {
@@ -31,12 +45,25 @@ export function FilesClient({ organizationId }: { organizationId: string }) {
     deleteFolder.mutate({ id })
   }
 
+  async function handleDeleteDocument(doc: { id: string; name: string }) {
+    if (!selectedFolder) return
+    try {
+      await deleteDocument(doc.id, organizationId, selectedFolder, doc.name)
+    } catch {
+      // blob/search cleanup is best-effort
+    }
+    deleteDoc.mutate({ id: doc.id })
+  }
+
   return (
     <div className="flex flex-1 flex-col p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Files</h1>
         <FolderCreateDialog
-          onCreated={() => utils.folder.list.invalidate()}
+          onCreated={(id) => {
+            utils.folder.list.invalidate()
+            setSelectedFolder(id)
+          }}
         />
       </div>
 
@@ -92,6 +119,7 @@ export function FilesClient({ organizationId }: { organizationId: string }) {
                     fileSize: Number(d.fileSize),
                     createdAt: String(d.createdAt),
                   }))}
+                  onDelete={handleDeleteDocument}
                 />
               )}
             </>

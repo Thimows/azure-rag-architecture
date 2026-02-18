@@ -83,6 +83,28 @@ export async function listDocuments(
   return response.json()
 }
 
+export async function deleteDocument(
+  documentId: string,
+  organizationId: string,
+  folderId: string,
+  documentName: string,
+): Promise<void> {
+  const params = new URLSearchParams({
+    document_id: documentId,
+    organization_id: organizationId,
+    folder_id: folderId,
+    document_name: documentName,
+  })
+
+  const response = await fetch(`${API_URL}/documents/delete?${params}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    throw new Error(`Delete failed: ${response.statusText}`)
+  }
+}
+
 interface DocumentInfo {
   name: string
   size: number

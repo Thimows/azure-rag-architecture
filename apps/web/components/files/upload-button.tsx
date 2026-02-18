@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { uploadDocument } from "@/lib/api-client"
+import { trpc } from "@/lib/trpc/client"
 
 interface UploadButtonProps {
   organizationId: string
@@ -18,6 +19,7 @@ export function UploadButton({
 }: UploadButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const createDoc = trpc.document.create.useMutation()
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return
@@ -25,7 +27,15 @@ export function UploadButton({
 
     try {
       for (const file of Array.from(files)) {
-        await uploadDocument(file, organizationId, folderId)
+        const result = await uploadDocument(file, organizationId, folderId)
+        await createDoc.mutateAsync({
+          id: result.document_id,
+          name: file.name,
+          folderId,
+          blobUrl: `${organizationId}/${folderId}/${file.name}`,
+          fileType: file.name.split(".").pop() ?? "",
+          fileSize: file.size,
+        })
       }
       onUploaded()
     } catch (err) {

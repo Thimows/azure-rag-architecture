@@ -12,4 +12,5 @@ dependencies = [
     "azure-storage-blob>=12.19.0",
     "pydantic-settings>=2.0.0",
     "sentence-transformers>=3.0.0",
+    "httpx>=0.27.0",
 ]

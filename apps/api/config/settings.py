@@ -25,6 +25,11 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = ""
 
+    # Databricks
+    DATABRICKS_HOST: str = ""
+    DATABRICKS_TOKEN: str = ""
+    DATABRICKS_JOB_ID: int = 0
+
     # RAG Pipeline
     RERANKING_ENABLED: bool = True
     MAX_HISTORY_TURNS: int = 10

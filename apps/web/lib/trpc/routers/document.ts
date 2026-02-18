@@ -20,10 +20,65 @@ export const documentRouter = createTRPCRouter({
           fileType: document.fileType,
           fileSize: document.fileSize,
           status: document.status,
+          error: document.error,
           createdAt: document.createdAt,
         })
         .from(document)
         .where(and(...conditions))
         .orderBy(desc(document.createdAt))
+    }),
+
+  create: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        folderId: z.string(),
+        blobUrl: z.string(),
+        fileType: z.string(),
+        fileSize: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [row] = await ctx.db
+        .insert(document)
+        .values({
+          id: input.id,
+          organizationId: ctx.organizationId,
+          folderId: input.folderId,
+          name: input.name,
+          blobUrl: input.blobUrl,
+          fileType: input.fileType,
+          fileSize: input.fileSize,
+          status: "uploaded",
+          error: null,
+          uploadedBy: ctx.session.user.id,
+        })
+        .onConflictDoUpdate({
+          target: [document.organizationId, document.folderId, document.name],
+          set: {
+            status: "uploaded",
+            error: null,
+            fileSize: input.fileSize,
+            blobUrl: input.blobUrl,
+          },
+        })
+        .returning({ id: document.id })
+
+      return row
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .delete(document)
+        .where(
+          and(
+            eq(document.id, input.id),
+            eq(document.organizationId, ctx.organizationId),
+          ),
+        )
+      return { ok: true }
     }),
 })

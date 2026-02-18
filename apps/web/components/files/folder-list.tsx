@@ -37,9 +37,9 @@ export function FolderList({
         <div
           key={f.id}
           className={cn(
-            "flex items-center justify-between rounded-md px-3 py-2 text-sm cursor-pointer transition-colors",
+            "group flex h-8 items-center justify-between rounded-full px-3 text-sm cursor-pointer transition-colors",
             selectedId === f.id
-              ? "bg-accent text-accent-foreground"
+              ? "bg-accent text-accent-foreground font-medium"
               : "hover:bg-muted",
           )}
           onClick={() => onSelect(f.id)}

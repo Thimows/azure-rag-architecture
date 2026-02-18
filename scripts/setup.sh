@@ -206,8 +206,9 @@ put_secret "azure-search-index-name"            "rag-index"
 put_secret "azure-storage-connection-string"    "$(get_output storage_connection_string)"
 put_secret "document-intelligence-endpoint"     "$(get_output document_intelligence_endpoint)"
 put_secret "document-intelligence-key"          "$(get_output document_intelligence_key)"
+put_secret "DATABASE_URL"                       "postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=require"
 
-ok "All 10 secrets configured"
+ok "All 11 secrets configured"
 
 # ─── Step 6: Deploy Databricks bundle ───────────────────────────────
 info "Step 6/6 — Deploying Databricks bundle (this can take a minute)..."
@@ -216,6 +217,42 @@ cd "$ROOT_DIR/databricks"
 databricks bundle deploy --target dev
 
 ok "Databricks bundle deployed"
+
+# Retrieve the job ID for the ingestion job we just deployed
+info "Retrieving Databricks job ID..."
+INGESTION_JOB_ID=$(databricks jobs list --output json 2>/dev/null | jq -r '
+  (if type == "object" then .jobs // [] else . end)
+  | map(select(.settings.name | test("RAG Document Ingestion")))
+  | .[0].job_id // empty
+' 2>/dev/null || echo "")
+
+if [[ -z "$INGESTION_JOB_ID" || "$INGESTION_JOB_ID" == "null" ]]; then
+  INGESTION_JOB_ID=""
+  warn "Could not find ingestion job ID — set DATABRICKS_JOB_ID manually in apps/api/.env"
+else
+  ok "Ingestion job ID: $INGESTION_JOB_ID"
+fi
+
+# Create a long-lived PAT for the FastAPI app to trigger jobs
+info "Creating Databricks Personal Access Token for API..."
+DATABRICKS_PAT=$(databricks tokens create --comment "enterprise-rag-api" --lifetime-seconds 7776000 2>/dev/null | jq -r '.token_value // empty' 2>/dev/null || echo "")
+
+if [[ -z "$DATABRICKS_PAT" ]]; then
+  warn "Could not create PAT — set DATABRICKS_TOKEN manually in apps/api/.env"
+  DATABRICKS_PAT=""
+else
+  ok "PAT created"
+fi
+
+# Append Databricks settings to apps/api/.env
+cat >> "$ROOT_DIR/apps/api/.env" <<EOF
+
+# Databricks
+DATABRICKS_HOST=${DATABRICKS_HOST:-}
+DATABRICKS_TOKEN=${DATABRICKS_PAT}
+DATABRICKS_JOB_ID=${INGESTION_JOB_ID}
+EOF
+ok "Databricks settings added to apps/api/.env"
 
 # ─── Done ────────────────────────────────────────────────────────────
 echo ""

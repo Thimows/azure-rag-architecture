@@ -28,6 +28,7 @@ resources:
               - tiktoken>=0.7.0
               - azure-ai-inference>=1.0.0b6
               - azure-search-documents>=11.4.0
+              - psycopg2-binary>=2.9.0
       tasks:
         - task_key: parse_documents
           environment_key: ingestion_env

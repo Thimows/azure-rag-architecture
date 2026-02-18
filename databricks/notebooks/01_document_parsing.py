@@ -168,6 +168,12 @@ df = spark.createDataFrame(parsed_documents)
 df.write.mode("append").saveAsTable(output_table)
 
 document_ids = [doc["document_id"] for doc in parsed_documents]
+
+# Update document status to "processing" in PostgreSQL
+from utils.db_status import update_document_status
+db_url = dbutils.secrets.get(scope=dbutils.widgets.get("secrets_scope"), key="DATABASE_URL")
+update_document_status(document_ids, "processing", db_url)
+
 dbutils.jobs.taskValues.set(key="document_ids", value=",".join(document_ids))
 dbutils.jobs.taskValues.set(key="organization_id", value=organization_id)
 dbutils.jobs.taskValues.set(key="folder_id", value=folder_id)

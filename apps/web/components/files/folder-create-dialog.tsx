@@ -15,7 +15,7 @@ import {
 import { Plus } from "lucide-react"
 
 interface FolderCreateDialogProps {
-  onCreated: () => void
+  onCreated: (id: string) => void
 }
 
 export function FolderCreateDialog({ onCreated }: FolderCreateDialogProps) {
@@ -23,10 +23,10 @@ export function FolderCreateDialog({ onCreated }: FolderCreateDialogProps) {
   const [name, setName] = useState("")
 
   const createFolder = trpc.folder.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setName("")
       setOpen(false)
-      onCreated()
+      onCreated(data.id)
     },
   })
 

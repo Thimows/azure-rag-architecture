@@ -120,6 +120,20 @@ print(f"\nIndexing complete: {success_count} succeeded, {error_count} failed")
 
 # COMMAND ----------
 
+# Update document status in PostgreSQL
+from utils.db_status import update_document_status
+
+secrets_scope = dbutils.widgets.get("secrets_scope")
+db_url = dbutils.secrets.get(scope=secrets_scope, key="DATABASE_URL")
+doc_ids = list(set(row["document_id"] for row in chunks))
+
+if error_count == 0:
+    update_document_status(doc_ids, "indexed", db_url)
+else:
+    update_document_status(doc_ids, "failed", db_url, error=f"{error_count} chunks failed to index")
+
+# COMMAND ----------
+
 dbutils.notebook.exit(json.dumps({
     "status": "SUCCESS" if error_count == 0 else "PARTIAL_SUCCESS",
     "success_count": success_count,

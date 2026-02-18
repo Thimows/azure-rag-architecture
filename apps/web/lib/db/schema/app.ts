@@ -7,6 +7,7 @@ import {
   real,
   timestamp,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core"
 import { organization, user } from "./auth"
 
@@ -46,6 +47,7 @@ export const document = pgTable(
     fileType: text("file_type").notNull(),
     fileSize: bigint("file_size", { mode: "number" }).notNull(),
     status: text("status").default("uploading").notNull(),
+    error: text("error"),
     uploadedBy: text("uploaded_by")
       .notNull()
       .references(() => user.id),
@@ -58,6 +60,11 @@ export const document = pgTable(
   (table) => [
     index("document_organizationId_idx").on(table.organizationId),
     index("document_folderId_idx").on(table.folderId),
+    uniqueIndex("document_org_folder_name_idx").on(
+      table.organizationId,
+      table.folderId,
+      table.name,
+    ),
   ],
 )
 

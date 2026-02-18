@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
-from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
+import httpx
+from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, UploadFile
 
 from config.settings import settings
 from models.document_models import (
@@ -11,7 +13,9 @@ from models.document_models import (
     DocumentUploadResponse,
     generate_document_id,
 )
-from utils.azure_clients import get_blob_service_client
+from utils.azure_clients import get_blob_service_client, get_search_client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -19,11 +23,37 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
+async def trigger_databricks_job(document_names: str, org_id: str, folder_id: str) -> None:
+    """Fire-and-forget trigger for the Databricks ingestion job."""
+    if not settings.DATABRICKS_HOST or not settings.DATABRICKS_TOKEN:
+        logger.debug("Databricks not configured, skipping job trigger")
+        return
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{settings.DATABRICKS_HOST}/api/2.1/jobs/run-now",
+                headers={"Authorization": f"Bearer {settings.DATABRICKS_TOKEN}"},
+                json={
+                    "job_id": settings.DATABRICKS_JOB_ID,
+                    "job_parameters": {
+                        "document_names": document_names,
+                        "organization_id": org_id,
+                        "folder_id": folder_id,
+                    },
+                },
+                timeout=10,
+            )
+        logger.info("Databricks job triggered for %s", document_names)
+    except Exception:
+        logger.exception("Failed to trigger Databricks job")
+
+
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
     file: UploadFile,
     organization_id: str = Form(...),
     folder_id: str = Form(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     """Upload a document to Azure Blob Storage for ingestion."""
     if not file.filename:
@@ -52,6 +82,8 @@ async def upload_document(
     blob_client.upload_blob(contents, overwrite=True)
 
     document_id = generate_document_id(blob_path)
+
+    background_tasks.add_task(trigger_databricks_job, blob_path, organization_id, folder_id)
 
     return DocumentUploadResponse(
         document_id=document_id,
@@ -104,3 +136,38 @@ async def list_documents(
         )
 
     return DocumentListResponse(documents=documents)
+
+
+@router.delete("/delete")
+async def delete_document(
+    document_id: str = Query(...),
+    organization_id: str = Query(...),
+    folder_id: str = Query(...),
+    document_name: str = Query(...),
+):
+    """Delete a document from blob storage and the search index."""
+    # Delete blob
+    blob_service = get_blob_service_client()
+    container_client = blob_service.get_container_client(settings.AZURE_STORAGE_CONTAINER_NAME)
+    blob_path = f"{organization_id}/{folder_id}/{document_name}"
+    try:
+        container_client.delete_blob(blob_path)
+    except Exception:
+        logger.warning("Blob not found or already deleted: %s", blob_path)
+
+    # Delete chunks from search index
+    try:
+        search_client = get_search_client()
+        results = search_client.search(
+            search_text="*",
+            filter=f"document_id eq '{document_id}'",
+            select=["id"],
+        )
+        docs_to_delete = [{"id": r["id"]} for r in results]
+        if docs_to_delete:
+            search_client.delete_documents(docs_to_delete)
+            logger.info("Deleted %d search entries for document %s", len(docs_to_delete), document_id)
+    except Exception:
+        logger.warning("Failed to delete search entries for document %s", document_id)
+
+    return {"ok": True}

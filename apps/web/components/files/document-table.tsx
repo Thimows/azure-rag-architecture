@@ -1,7 +1,21 @@
 "use client"
 
-import { FileText } from "lucide-react"
+import {
+  FileText,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -20,11 +34,36 @@ interface DocumentRow {
   createdAt: string
 }
 
-const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  uploading: "outline",
-  processing: "secondary",
-  indexed: "default",
-  failed: "destructive",
+const statusConfig: Record<string, {
+  label: string
+  variant: "default" | "secondary" | "destructive" | "outline"
+  icon: React.ReactNode
+}> = {
+  uploading: {
+    label: "Uploading",
+    variant: "outline",
+    icon: <Loader2 className="size-3 animate-spin" />,
+  },
+  uploaded: {
+    label: "Processing",
+    variant: "secondary",
+    icon: <Loader2 className="size-3 animate-spin" />,
+  },
+  processing: {
+    label: "Processing",
+    variant: "secondary",
+    icon: <Loader2 className="size-3 animate-spin" />,
+  },
+  indexed: {
+    label: "Ready",
+    variant: "default",
+    icon: <CheckCircle className="size-3" />,
+  },
+  failed: {
+    label: "Failed",
+    variant: "destructive",
+    icon: <XCircle className="size-3" />,
+  },
 }
 
 function formatSize(bytes: number): string {
@@ -33,7 +72,12 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function DocumentTable({ documents }: { documents: DocumentRow[] }) {
+interface DocumentTableProps {
+  documents: DocumentRow[]
+  onDelete?: (doc: DocumentRow) => void
+}
+
+export function DocumentTable({ documents, onDelete }: DocumentTableProps) {
   if (documents.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
@@ -51,6 +95,7 @@ export function DocumentTable({ documents }: { documents: DocumentRow[] }) {
           <TableHead>Size</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Uploaded</TableHead>
+          <TableHead className="w-10" />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -69,12 +114,34 @@ export function DocumentTable({ documents }: { documents: DocumentRow[] }) {
               {formatSize(doc.fileSize)}
             </TableCell>
             <TableCell>
-              <Badge variant={statusVariant[doc.status] ?? "outline"}>
-                {doc.status}
+              <Badge
+                variant={statusConfig[doc.status]?.variant ?? "outline"}
+                className="gap-1"
+              >
+                {statusConfig[doc.status]?.icon}
+                {statusConfig[doc.status]?.label ?? doc.status}
               </Badge>
             </TableCell>
             <TableCell className="text-muted-foreground">
               {new Date(doc.createdAt).toLocaleDateString()}
+            </TableCell>
+            <TableCell>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-8">
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => onDelete?.(doc)}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </TableCell>
           </TableRow>
         ))}
