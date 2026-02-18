@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { Streamdown } from "streamdown"
+import "streamdown/styles.css"
 import type { Citation } from "@/lib/types"
 import { CitationBubble } from "@/components/citations/citation-bubble"
 
@@ -27,8 +28,10 @@ export function StreamingMessage({
   return (
     <div className="text-sm leading-relaxed">
       <Streamdown
-        animated
+        mode={isComplete ? "static" : "streaming"}
+        animated={{ animation: "blurIn", duration: 250, easing: "ease-out" }}
         isAnimating={!isComplete}
+        parseIncompleteMarkdown
         components={{
           a: (props) => {
             const href = props.href ?? ""
