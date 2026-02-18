@@ -53,9 +53,11 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 - Document parsing via Azure Document Intelligence with layout analysis
 - Custom chunking strategies (see below) — no dependency on Azure's built-in indexer pipeline, giving you full control over chunk size, overlap and splitting logic
 - Hybrid search combining vector, keyword and semantic ranking with RRF fusion
+- Two-stage retrieval funnel: fetches 50 candidates via hybrid search, reranks to the top 10, then passes only those to generation — configurable via `SEARCH_TOP_K` and `CONTEXT_TOP_K`
 - Optional LLM-based reranking via GPT-5 Nano (benchmarkable against Azure's built-in semantic ranker)
 - Per-query folder filtering — users can scope retrieval to specific folders or search across all folders, directly from the chat input
 - Answer generation strictly grounded in retrieved context to reduce hallucination
+- All blocking Azure SDK calls wrapped in `asyncio.to_thread()` — the ASGI event loop never blocks, keeping concurrent requests responsive
 
 **Chunking Strategies**
 
@@ -73,14 +75,24 @@ All strategies use `tiktoken` with `cl100k_base` encoding for token counting. To
 
 **Citation System**
 - Inline citation bubbles `[1]` `[2]` in every answer
-- Hover to highlight source text and preview the reference
-- Click to open artifact panel with document viewer on the exact page
-- Fuzzy text matching to locate and highlight cited passages in the original document
+- Hover to highlight source text and preview the reference — the enclosing paragraph is also highlighted to show exactly which part of the answer the citation supports
+- Click to open an inline artifact panel (animated slide-in, pushes chat content aside) with a document viewer scrolled to the exact cited page
 
 **Streaming**
-- Real-time token-by-token streaming from FastAPI to the browser
-- Vercel Streamdown for incremental markdown rendering
+- Real-time token-by-token streaming from FastAPI to the browser via SSE
+- Vercel Streamdown for incremental markdown rendering with blur-in token animation
 - Citations parsed and rendered as they stream in
+- Reasoning model support: chain-of-thought is streamed via dedicated `thinking`/`thinking_done` SSE events and displayed in an expandable reasoning trace above the answer
+
+**Document Management**
+- Upload PDF, Word and TXT files through the web UI — each upload triggers the Databricks ingestion pipeline automatically
+- Real-time processing status: the pipeline writes status updates back to PostgreSQL (`processing` → `indexed` / `failed`), and the UI auto-polls until all documents are ready — live spinner to green checkmark transition
+- Delete a document and its blob, search index chunks and database records are all cleaned up in one operation
+
+**Multi-Tenant Workspaces**
+- Organization-based multi-tenancy: all documents, search results and chat history are scoped by organization
+- BetterAuth with organization plugin for auth, session management and workspace switching
+- New users get a personal workspace automatically on sign-up
 
 **Evaluation**
 - Custom LLM-as-judge pipeline using Mistral Large 3
@@ -102,7 +114,8 @@ All strategies use `tiktoken` with `cl100k_base` encoding for token counting. To
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Vercel Streamdown |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Vercel Streamdown, tRPC v11, TanStack Query v5, shadcn/ui |
+| Auth & DB | BetterAuth (organization plugin), Drizzle ORM, Azure PostgreSQL |
 | Backend | FastAPI, Python 3.9+, Pydantic |
 | AI Services | Azure AI Foundry (Mistral Large 3, GPT-5 Nano, text-embedding-3-large), Azure AI Search, Azure Document Intelligence |
 | Ingestion | Azure Databricks (premium tier), Databricks Asset Bundles, semantic chunking |
