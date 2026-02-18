@@ -79,9 +79,9 @@ if [ ! -f terraform.tfvars ]; then
   echo ""
   echo "  No terraform.tfvars found. The following defaults will be used:"
   echo ""
-  echo "    Resource group       = rg-enterprise-rag"
+  echo "    Resource group       = rg-azure-rag"
   echo "    Location             = swedencentral"
-  echo "    Storage account      = stenterpriserag"
+  echo "    Storage account      = stazurerag"
   echo "    Databricks SKU       = premium"
   echo ""
   echo "    PostgreSQL password   = (auto-generated, saved in terraform.tfvars)"
@@ -246,7 +246,7 @@ fi
 
 # Create a long-lived PAT for the FastAPI app to trigger jobs
 info "Creating Databricks Personal Access Token for API..."
-DATABRICKS_PAT=$(databricks tokens create --comment "enterprise-rag-api" --lifetime-seconds 7776000 2>/dev/null | jq -r '.token_value // empty' 2>/dev/null || echo "")
+DATABRICKS_PAT=$(databricks tokens create --comment "azure-rag-api" --lifetime-seconds 7776000 2>/dev/null | jq -r '.token_value // empty' 2>/dev/null || echo "")
 
 if [[ -z "$DATABRICKS_PAT" ]]; then
   warn "Could not create PAT — set DATABRICKS_TOKEN manually in apps/api/.env"

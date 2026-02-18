@@ -1,6 +1,6 @@
-resource_group_name  = "rg-enterprise-rag"
+resource_group_name  = "rg-azure-rag"
 location             = "swedencentral"
-storage_account_name = "stenterpriserag"
+storage_account_name = "stazurerag"
 project_prefix       = "rag"
 
 # PostgreSQL (required -- no default)

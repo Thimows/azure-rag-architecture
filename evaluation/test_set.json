@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "description": "Evaluation test set for Enterprise RAG Architecture. Questions are based on Q1 2025 Form 10-Q filings from Apple, Tesla, and Netflix.",
+    "description": "Evaluation test set for Azure RAG Architecture. Questions are based on Q1 2025 Form 10-Q filings from Apple, Tesla, and Netflix.",
     "documents": [
       "apple-10k-q1.pdf",
       "tesla-10k-q1.pdf",

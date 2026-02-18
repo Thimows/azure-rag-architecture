@@ -1,4 +1,4 @@
-# Enterprise RAG Architecture
+# Azure RAG Architecture
 
 A production-grade Retrieval-Augmented Generation system built for enterprise environments. Uses Azure AI Foundry (Mistral Large 3 for answer generation, GPT-5 Nano for query rewriting, text-embedding-3-large for embeddings), Azure AI Search for hybrid retrieval and Azure Databricks for automated document ingestion and chunking workflows.
 
@@ -168,7 +168,7 @@ Embeddings use **text-embedding-3-large** (OpenAI via Azure), which is also Dire
 ## Project Structure
 
 ```
-enterprise-rag-architecture/
+azure-rag-architecture/
   apps/
     api/          FastAPI backend (retrieval, generation, streaming)
     web/          Next.js frontend (chat UI, citations, artifact panel)
@@ -207,8 +207,8 @@ The Databricks CLI authenticates automatically through your Azure login -no sepa
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/Thimows/enterprise-rag-architecture.git
-cd enterprise-rag-architecture
+git clone https://github.com/Thimows/azure-rag-architecture.git
+cd azure-rag-architecture
 npm install
 
 # 2. Provision Azure resources (incl. Databricks workspace), generate .env files, deploy bundle

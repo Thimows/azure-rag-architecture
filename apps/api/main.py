@@ -13,7 +13,7 @@ from config.settings import settings
 from routers import health, chat, documents
 
 app = FastAPI(
-    title="Enterprise RAG API",
+    title="Azure RAG API",
     description="Production-grade Retrieval-Augmented Generation API",
     version="0.1.0",
 )

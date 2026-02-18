@@ -1,7 +1,7 @@
 [project]
 name = "api"
 version = "0.1.0"
-description = "Enterprise RAG Architecture — FastAPI backend"
+description = "Azure RAG Architecture — FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
 dependencies = [
