@@ -12,6 +12,7 @@
 dbutils.widgets.text("input_table", "rag_ingestion.parsed_documents", "Input Delta Table")
 dbutils.widgets.text("output_table", "rag_ingestion.chunks", "Output Delta Table")
 dbutils.widgets.dropdown("chunking_strategy", "semantic", ["semantic", "structure_aware", "sliding_window"], "Chunking Strategy")
+dbutils.widgets.text("secrets_scope", "rag-ingestion", "Databricks Secrets Scope")
 dbutils.widgets.text("max_tokens", "512", "Max Tokens per Chunk")
 dbutils.widgets.text("overlap_tokens", "50", "Overlap Tokens")
 
@@ -19,6 +20,8 @@ dbutils.widgets.text("overlap_tokens", "50", "Overlap Tokens")
 
 import sys
 import json
+
+import pyspark.sql.functions as F
 
 sys.path.append("../")
 from utils.chunking_strategies import (
@@ -51,85 +54,89 @@ if not document_ids_raw:
 document_ids = [did.strip() for did in document_ids_raw.split(",") if did.strip()]
 print(f"Chunking {len(document_ids)} documents")
 
-# COMMAND ----------
-
-df = spark.table(input_table).filter(spark.col("document_id").isin(document_ids))
-documents = df.collect()
-print(f"Read {len(documents)} documents from {input_table}")
+from utils.db_status import update_document_status
+db_url = dbutils.secrets.get(scope=dbutils.widgets.get("secrets_scope"), key="DATABASE_URL")
 
 # COMMAND ----------
 
-all_chunks = []
+try:
+    df = spark.table(input_table).filter(F.col("document_id").isin(document_ids))
+    documents = df.collect()
+    print(f"Read {len(documents)} documents from {input_table}")
 
-for doc in documents:
-    document_id = doc["document_id"]
-    document_name = doc["document_name"]
-    document_url = doc["document_url"]
-    pages = json.loads(doc["pages_json"])
+    all_chunks = []
 
-    doc_chunks = []
+    for doc in documents:
+        document_id = doc["document_id"]
+        document_name = doc["document_name"]
+        document_url = doc["document_url"]
+        pages = json.loads(doc["pages_json"])
 
-    if strategy == "structure_aware":
-        all_layout = []
-        full_text = ""
-        for page in pages:
-            all_layout.extend(page.get("layout", []))
-            full_text += page["content"] + "\n\n"
-        doc_chunks = structure_aware_chunker(full_text.strip(), all_layout, max_tokens=max_tokens)
-    elif strategy == "sliding_window":
-        for page in pages:
-            if not page["content"].strip():
-                continue
-            page_chunks = sliding_window_chunker(
-                page["content"],
-                window_size=max_tokens,
-                overlap=overlap_tokens,
-                page_number=page["page_number"],
-            )
-            doc_chunks.extend(page_chunks)
-    else:  # semantic (default)
-        for page in pages:
-            if not page["content"].strip():
-                continue
-            page_chunks = semantic_chunker(
-                page["content"],
-                max_tokens=max_tokens,
-                overlap_tokens=overlap_tokens,
-                page_number=page["page_number"],
-            )
-            doc_chunks.extend(page_chunks)
+        doc_chunks = []
 
-    # Re-index chunks sequentially for the entire document
-    for i, chunk in enumerate(doc_chunks):
-        chunk["chunk_index"] = i
-        chunk["document_id"] = document_id
-        chunk["document_name"] = document_name
-        chunk["document_url"] = document_url
-        chunk["id"] = f"{document_id}_chunk_{i}"
-        chunk["metadata"] = json.dumps(chunk.get("metadata", {}))
-        chunk["organization_id"] = doc.get("organization_id", organization_id) or organization_id
-        chunk["folder_id"] = doc.get("folder_id", folder_id) or folder_id
+        if strategy == "structure_aware":
+            all_layout = []
+            full_text = ""
+            for page in pages:
+                all_layout.extend(page.get("layout", []))
+                full_text += page["content"] + "\n\n"
+            doc_chunks = structure_aware_chunker(full_text.strip(), all_layout, max_tokens=max_tokens)
+        elif strategy == "sliding_window":
+            for page in pages:
+                if not page["content"].strip():
+                    continue
+                page_chunks = sliding_window_chunker(
+                    page["content"],
+                    window_size=max_tokens,
+                    overlap=overlap_tokens,
+                    page_number=page["page_number"],
+                )
+                doc_chunks.extend(page_chunks)
+        else:  # semantic (default)
+            for page in pages:
+                if not page["content"].strip():
+                    continue
+                page_chunks = semantic_chunker(
+                    page["content"],
+                    max_tokens=max_tokens,
+                    overlap_tokens=overlap_tokens,
+                    page_number=page["page_number"],
+                )
+                doc_chunks.extend(page_chunks)
 
-    is_valid, errors = validate_chunks(doc_chunks, max_tokens=max_tokens + 50)
-    if not is_valid:
-        print(f"  WARNING: Chunk validation issues for {document_name}: {errors[:3]}")
+        # Re-index chunks sequentially for the entire document
+        for i, chunk in enumerate(doc_chunks):
+            chunk["chunk_index"] = i
+            chunk["document_id"] = document_id
+            chunk["document_name"] = document_name
+            chunk["document_url"] = document_url
+            chunk["id"] = f"{document_id}_chunk_{i}"
+            chunk["metadata"] = json.dumps(chunk.get("metadata", {}))
+            chunk["organization_id"] = doc.get("organization_id", organization_id) or organization_id
+            chunk["folder_id"] = doc.get("folder_id", folder_id) or folder_id
 
-    all_chunks.extend(doc_chunks)
+        is_valid, errors = validate_chunks(doc_chunks, max_tokens=max_tokens + 50)
+        if not is_valid:
+            print(f"  WARNING: Chunk validation issues for {document_name}: {errors[:3]}")
 
-print(f"Generated {len(all_chunks)} chunks using '{strategy}' strategy")
+        all_chunks.extend(doc_chunks)
+
+    print(f"Generated {len(all_chunks)} chunks using '{strategy}' strategy")
+
+    chunk_df = spark.createDataFrame(all_chunks)
+    chunk_df.write.mode("append").saveAsTable(output_table)
+
+    print(f"Appended {len(all_chunks)} chunks to {output_table}")
+
+except Exception as e:
+    update_document_status(document_ids, "failed", db_url, error=f"Chunking failed: {e}")
+    raise
 
 # COMMAND ----------
-
-chunk_df = spark.createDataFrame(all_chunks)
-chunk_df.write.mode("append").saveAsTable(output_table)
 
 chunk_ids = [chunk["id"] for chunk in all_chunks]
 dbutils.jobs.taskValues.set(key="chunk_ids", value=",".join(chunk_ids))
 dbutils.jobs.taskValues.set(key="organization_id", value=organization_id)
 dbutils.jobs.taskValues.set(key="folder_id", value=folder_id)
-
-print(f"Appended {len(all_chunks)} chunks to {output_table}")
-
-# COMMAND ----------
 
 dbutils.notebook.exit(json.dumps({"status": "SUCCESS", "chunk_count": len(all_chunks), "strategy": strategy}))

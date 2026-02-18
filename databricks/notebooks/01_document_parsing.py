@@ -72,114 +72,119 @@ if not blobs:
 
 # COMMAND ----------
 
-parsed_documents = []
+# Compute document IDs upfront so we can mark them as failed if anything goes wrong
+from utils.db_status import update_document_status
 
-for blob in blobs:
-    document_id = str(uuid.uuid5(uuid.NAMESPACE_URL, blob.name))
-    print(f"Processing: {blob.name} (id: {document_id})")
+document_ids = [str(uuid.uuid5(uuid.NAMESPACE_URL, blob.name)) for blob in blobs]
+db_url = dbutils.secrets.get(scope=dbutils.widgets.get("secrets_scope"), key="DATABASE_URL")
 
-    # Extract organization_id and folder_id from blob path ({org_id}/{folder_id}/{filename})
-    path_parts = blob.name.split("/")
-    if len(path_parts) >= 3 and not organization_id:
-        blob_org_id = path_parts[0]
-        blob_folder_id = path_parts[1]
-    else:
-        blob_org_id = organization_id
-        blob_folder_id = folder_id
-
-    blob_data = container_client.download_blob(blob.name).readall()
-    ext = blob.name.rsplit(".", 1)[-1].lower()
-
-    if ext == "txt":
-        content = blob_data.decode("utf-8")
-        parsed_doc = {
-            "document_id": document_id,
-            "document_name": blob.name,
-            "document_url": f"https://{blob_client.account_name}.blob.core.windows.net/{container_name}/{blob.name}",
-            "content": content,
-            "pages": [{"page_number": 1, "content": content, "layout": []}],
-            "page_count": 1,
-            "parsed_at": datetime.now(timezone.utc).isoformat(),
-            "organization_id": blob_org_id,
-            "folder_id": blob_folder_id,
-        }
-    else:
-        content_type = (
-            "application/pdf" if ext == "pdf"
-            else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-        poller = doc_intel_client.begin_analyze_document(
-            "prebuilt-layout",
-            document=blob_data,
-            content_type=content_type,
-        )
-        result = poller.result()
-
-        pages_data = []
-        for page in result.pages or []:
-            page_content = ""
-            page_layout = []
-            for paragraph in result.paragraphs or []:
-                if any(br.page_number == page.page_number for br in (paragraph.bounding_regions or [])):
-                    page_content += paragraph.content + "\n"
-                    page_layout.append({
-                        "content": paragraph.content,
-                        "role": getattr(paragraph, "role", None),
-                        "bounding_regions": [
-                            {"page_number": br.page_number}
-                            for br in (paragraph.bounding_regions or [])
-                        ],
-                    })
-            pages_data.append({
-                "page_number": page.page_number,
-                "content": page_content.strip(),
-                "layout": page_layout,
-            })
-
-        full_content = "\n\n".join(p["content"] for p in pages_data if p["content"])
-
-        parsed_doc = {
-            "document_id": document_id,
-            "document_name": blob.name,
-            "document_url": f"https://{blob_client.account_name}.blob.core.windows.net/{container_name}/{blob.name}",
-            "content": full_content,
-            "pages": pages_data,
-            "page_count": len(pages_data),
-            "parsed_at": datetime.now(timezone.utc).isoformat(),
-            "organization_id": blob_org_id,
-            "folder_id": blob_folder_id,
-        }
-
-    is_valid, errors = validate_parsed_document(parsed_doc)
-    if not is_valid:
-        print(f"  WARNING: Validation issues for {blob.name}: {errors}")
-
-    parsed_documents.append(parsed_doc)
-
-print(f"Parsed {len(parsed_documents)} documents successfully")
+update_document_status(document_ids, "processing", db_url)
 
 # COMMAND ----------
 
-for doc in parsed_documents:
-    doc["pages_json"] = json.dumps(doc["pages"])
-    del doc["pages"]
+try:
+    parsed_documents = []
 
-df = spark.createDataFrame(parsed_documents)
-df.write.mode("append").saveAsTable(output_table)
+    for blob in blobs:
+        document_id = str(uuid.uuid5(uuid.NAMESPACE_URL, blob.name))
+        print(f"Processing: {blob.name} (id: {document_id})")
 
-document_ids = [doc["document_id"] for doc in parsed_documents]
+        # Extract organization_id and folder_id from blob path ({org_id}/{folder_id}/{filename})
+        path_parts = blob.name.split("/")
+        if len(path_parts) >= 3 and not organization_id:
+            blob_org_id = path_parts[0]
+            blob_folder_id = path_parts[1]
+        else:
+            blob_org_id = organization_id
+            blob_folder_id = folder_id
 
-# Update document status to "processing" in PostgreSQL
-from utils.db_status import update_document_status
-db_url = dbutils.secrets.get(scope=dbutils.widgets.get("secrets_scope"), key="DATABASE_URL")
-update_document_status(document_ids, "processing", db_url)
+        blob_data = container_client.download_blob(blob.name).readall()
+        ext = blob.name.rsplit(".", 1)[-1].lower()
+
+        if ext == "txt":
+            content = blob_data.decode("utf-8")
+            parsed_doc = {
+                "document_id": document_id,
+                "document_name": blob.name,
+                "document_url": f"https://{blob_client.account_name}.blob.core.windows.net/{container_name}/{blob.name}",
+                "content": content,
+                "pages": [{"page_number": 1, "content": content, "layout": []}],
+                "page_count": 1,
+                "parsed_at": datetime.now(timezone.utc).isoformat(),
+                "organization_id": blob_org_id,
+                "folder_id": blob_folder_id,
+            }
+        else:
+            poller = doc_intel_client.begin_analyze_document(
+                "prebuilt-layout",
+                document=blob_data,
+            )
+            result = poller.result()
+
+            pages_data = []
+            for page in result.pages or []:
+                page_content = ""
+                page_layout = []
+                for paragraph in result.paragraphs or []:
+                    if any(br.page_number == page.page_number for br in (paragraph.bounding_regions or [])):
+                        page_content += paragraph.content + "\n"
+                        page_layout.append({
+                            "content": paragraph.content,
+                            "role": getattr(paragraph, "role", None),
+                            "bounding_regions": [
+                                {"page_number": br.page_number}
+                                for br in (paragraph.bounding_regions or [])
+                            ],
+                        })
+                pages_data.append({
+                    "page_number": page.page_number,
+                    "content": page_content.strip(),
+                    "layout": page_layout,
+                })
+
+            full_content = "\n\n".join(p["content"] for p in pages_data if p["content"])
+
+            parsed_doc = {
+                "document_id": document_id,
+                "document_name": blob.name,
+                "document_url": f"https://{blob_client.account_name}.blob.core.windows.net/{container_name}/{blob.name}",
+                "content": full_content,
+                "pages": pages_data,
+                "page_count": len(pages_data),
+                "parsed_at": datetime.now(timezone.utc).isoformat(),
+                "organization_id": blob_org_id,
+                "folder_id": blob_folder_id,
+            }
+
+        is_valid, errors = validate_parsed_document(parsed_doc)
+        if not is_valid:
+            print(f"  WARNING: Validation issues for {blob.name}: {errors}")
+
+        parsed_documents.append(parsed_doc)
+
+    print(f"Parsed {len(parsed_documents)} documents successfully")
+
+    # Save to Delta table
+    for doc in parsed_documents:
+        doc["pages_json"] = json.dumps(doc["pages"])
+        del doc["pages"]
+
+    schema_name = output_table.rsplit(".", 1)[0]
+    spark.sql(f"CREATE SCHEMA IF NOT EXISTS {schema_name}")
+
+    df = spark.createDataFrame(parsed_documents)
+    df.write.mode("append").saveAsTable(output_table)
+
+    print(f"Appended {len(parsed_documents)} parsed documents to {output_table}")
+
+except Exception as e:
+    update_document_status(document_ids, "failed", db_url, error=str(e))
+    raise
+
+# COMMAND ----------
 
 dbutils.jobs.taskValues.set(key="document_ids", value=",".join(document_ids))
 dbutils.jobs.taskValues.set(key="organization_id", value=organization_id)
 dbutils.jobs.taskValues.set(key="folder_id", value=folder_id)
-
-print(f"Appended {len(parsed_documents)} parsed documents to {output_table}")
-
-# COMMAND ----------
 
 dbutils.notebook.exit(json.dumps({"status": "SUCCESS", "document_count": len(parsed_documents)}))

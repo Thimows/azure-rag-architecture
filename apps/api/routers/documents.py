@@ -25,27 +25,33 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
 async def trigger_databricks_job(document_names: str, org_id: str, folder_id: str) -> None:
     """Fire-and-forget trigger for the Databricks ingestion job."""
-    if not settings.DATABRICKS_HOST or not settings.DATABRICKS_TOKEN:
+    if not settings.DATABRICKS_HOST or not settings.DATABRICKS_TOKEN or not settings.DATABRICKS_JOB_ID:
         logger.debug("Databricks not configured, skipping job trigger")
         return
+    url = f"{settings.DATABRICKS_HOST}/api/2.1/jobs/run-now"
+    payload = {
+        "job_id": settings.DATABRICKS_JOB_ID,
+        "job_parameters": {
+            "document_names": document_names,
+            "organization_id": org_id,
+            "folder_id": folder_id,
+        },
+    }
+    logger.info("Triggering Databricks job %s at %s", settings.DATABRICKS_JOB_ID, url)
     try:
         async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{settings.DATABRICKS_HOST}/api/2.1/jobs/run-now",
+            resp = await client.post(
+                url,
                 headers={"Authorization": f"Bearer {settings.DATABRICKS_TOKEN}"},
-                json={
-                    "job_id": settings.DATABRICKS_JOB_ID,
-                    "job_parameters": {
-                        "document_names": document_names,
-                        "organization_id": org_id,
-                        "folder_id": folder_id,
-                    },
-                },
+                json=payload,
                 timeout=10,
             )
-        logger.info("Databricks job triggered for %s", document_names)
+        if resp.status_code == 200:
+            logger.info("Databricks job triggered successfully: %s", resp.json())
+        else:
+            logger.error("Databricks trigger failed (%s): %s", resp.status_code, resp.text)
     except Exception:
-        logger.exception("Failed to trigger Databricks job")
+        logger.exception("Failed to connect to Databricks")
 
 
 @router.post("/upload", response_model=DocumentUploadResponse)

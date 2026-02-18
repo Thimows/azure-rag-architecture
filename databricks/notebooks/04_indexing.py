@@ -20,6 +20,8 @@ import sys
 import json
 import time
 
+import pyspark.sql.functions as F
+
 sys.path.append("../")
 from utils.azure_clients import get_search_client
 from utils.quality_checks import validate_index_document
@@ -44,93 +46,89 @@ if not chunk_ids_raw:
 chunk_ids = [cid.strip() for cid in chunk_ids_raw.split(",") if cid.strip()]
 print(f"Indexing {len(chunk_ids)} chunks")
 
-# COMMAND ----------
+# Get document IDs for status updates (extract from chunk IDs: "{doc_id}_chunk_{n}")
+document_ids = list(set(cid.rsplit("_chunk_", 1)[0] for cid in chunk_ids))
 
-search_client = get_search_client(index_name)
-
-# COMMAND ----------
-
-df = spark.table(input_table).filter(spark.col("id").isin(chunk_ids))
-chunks = df.collect()
-print(f"Read {len(chunks)} chunks from {input_table}")
-
-# COMMAND ----------
-
-documents = []
-validation_errors = []
-
-for row in chunks:
-    doc = {
-        "id": row["id"],
-        "content": row["content"],
-        "content_vector": list(row["content_vector"]),
-        "document_id": row["document_id"],
-        "document_name": row["document_name"],
-        "document_url": row["document_url"],
-        "page_number": row.get("page_number") or 0,
-        "chunk_index": row["chunk_index"],
-        "metadata": row.get("metadata", "{}"),
-        "organization_id": row["organization_id"],
-        "folder_id": row["folder_id"],
-    }
-
-    is_valid, errors = validate_index_document(doc)
-    if not is_valid:
-        validation_errors.extend(errors)
-
-    documents.append(doc)
-
-if validation_errors:
-    print(f"WARNING: {len(validation_errors)} validation issues found")
-    for err in validation_errors[:10]:
-        print(f"  - {err}")
-
-# COMMAND ----------
-
-total_batches = (len(documents) + upload_batch_size - 1) // upload_batch_size
-success_count = 0
-error_count = 0
-
-for batch_idx in range(total_batches):
-    start = batch_idx * upload_batch_size
-    end = min(start + upload_batch_size, len(documents))
-    batch = documents[start:end]
-
-    try:
-        result = search_client.merge_or_upload_documents(batch)
-        succeeded = sum(1 for r in result if r.succeeded)
-        failed = sum(1 for r in result if not r.succeeded)
-        success_count += succeeded
-        error_count += failed
-
-        if failed > 0:
-            for r in result:
-                if not r.succeeded:
-                    print(f"  Failed: {r.key} - {r.error_message}")
-
-        print(f"  Batch {batch_idx + 1}/{total_batches}: {succeeded} succeeded, {failed} failed")
-    except Exception as e:
-        print(f"  Batch {batch_idx + 1}/{total_batches} FAILED: {e}")
-        error_count += len(batch)
-
-    if batch_idx < total_batches - 1:
-        time.sleep(0.5)
-
-print(f"\nIndexing complete: {success_count} succeeded, {error_count} failed")
-
-# COMMAND ----------
-
-# Update document status in PostgreSQL
 from utils.db_status import update_document_status
+db_url = dbutils.secrets.get(scope=dbutils.widgets.get("secrets_scope"), key="DATABASE_URL")
 
-secrets_scope = dbutils.widgets.get("secrets_scope")
-db_url = dbutils.secrets.get(scope=secrets_scope, key="DATABASE_URL")
-doc_ids = list(set(row["document_id"] for row in chunks))
+# COMMAND ----------
 
-if error_count == 0:
-    update_document_status(doc_ids, "indexed", db_url)
-else:
-    update_document_status(doc_ids, "failed", db_url, error=f"{error_count} chunks failed to index")
+try:
+    search_client = get_search_client(index_name)
+
+    df = spark.table(input_table).filter(F.col("id").isin(chunk_ids))
+    chunks = df.collect()
+    print(f"Read {len(chunks)} chunks from {input_table}")
+
+    documents = []
+    validation_errors = []
+
+    for row in chunks:
+        doc = {
+            "id": row["id"],
+            "content": row["content"],
+            "content_vector": list(row["content_vector"]),
+            "document_id": row["document_id"],
+            "document_name": row["document_name"],
+            "document_url": row["document_url"],
+            "page_number": row.get("page_number") or 0,
+            "chunk_index": row["chunk_index"],
+            "metadata": row.get("metadata", "{}"),
+            "organization_id": row["organization_id"],
+            "folder_id": row["folder_id"],
+        }
+
+        is_valid, errors = validate_index_document(doc)
+        if not is_valid:
+            validation_errors.extend(errors)
+
+        documents.append(doc)
+
+    if validation_errors:
+        print(f"WARNING: {len(validation_errors)} validation issues found")
+        for err in validation_errors[:10]:
+            print(f"  - {err}")
+
+    total_batches = (len(documents) + upload_batch_size - 1) // upload_batch_size
+    success_count = 0
+    error_count = 0
+
+    for batch_idx in range(total_batches):
+        start = batch_idx * upload_batch_size
+        end = min(start + upload_batch_size, len(documents))
+        batch = documents[start:end]
+
+        try:
+            result = search_client.merge_or_upload_documents(batch)
+            succeeded = sum(1 for r in result if r.succeeded)
+            failed = sum(1 for r in result if not r.succeeded)
+            success_count += succeeded
+            error_count += failed
+
+            if failed > 0:
+                for r in result:
+                    if not r.succeeded:
+                        print(f"  Failed: {r.key} - {r.error_message}")
+
+            print(f"  Batch {batch_idx + 1}/{total_batches}: {succeeded} succeeded, {failed} failed")
+        except Exception as e:
+            print(f"  Batch {batch_idx + 1}/{total_batches} FAILED: {e}")
+            error_count += len(batch)
+
+        if batch_idx < total_batches - 1:
+            time.sleep(0.5)
+
+    print(f"\nIndexing complete: {success_count} succeeded, {error_count} failed")
+
+    if error_count == 0:
+        update_document_status(document_ids, "indexed", db_url)
+    else:
+        update_document_status(document_ids, "failed", db_url, error=f"{error_count} chunks failed to index")
+
+except Exception as e:
+    update_document_status(document_ids, "failed", db_url, error=f"Indexing failed: {e}")
+    raise
 
 # COMMAND ----------
 

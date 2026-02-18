@@ -51,10 +51,24 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 **RAG Pipeline**
 - Query rewriting via GPT-5 Nano (with `reasoning_effort: low`) to resolve follow-up questions into standalone retrieval queries using conversation history
 - Document parsing via Azure Document Intelligence with layout analysis
-- Semantic chunking that preserves document structure and sentence boundaries
+- Custom chunking strategies (see below) — no dependency on Azure's built-in indexer pipeline, giving you full control over chunk size, overlap and splitting logic
 - Hybrid search combining vector, keyword and semantic ranking with RRF fusion
 - Optional cross-encoder reranking (benchmarkable against Azure's built-in semantic ranker)
 - Answer generation strictly grounded in retrieved context to reduce hallucination
+
+**Chunking Strategies**
+
+The ingestion pipeline uses custom chunking logic (`databricks/utils/chunking_strategies.py`) rather than Azure's built-in indexer skillsets. This gives you full control over how documents are split, making it easy to tune chunk size, overlap and splitting behavior for your specific use case.
+
+Three strategies are available, configurable via the `chunking_strategy` parameter on the Databricks job:
+
+| Strategy | Default | Description |
+|----------|---------|-------------|
+| `semantic` | Yes | Splits on sentence boundaries, accumulates up to 512 tokens per chunk with 50-token overlap. Never cuts mid-sentence. Best general-purpose option. |
+| `structure_aware` | No | Uses Document Intelligence layout data (headings, sections) to group text by document structure. Falls back to semantic chunking for oversized sections. Best for well-structured documents with clear headings. |
+| `sliding_window` | No | Fixed 512-token window with 50-token overlap. Pure token-based, simple and predictable. Can cut mid-sentence. |
+
+All strategies use `tiktoken` with `cl100k_base` encoding for token counting. To change the strategy, update the `chunking_strategy` widget default in `databricks/notebooks/02_chunking.py` or pass it as a job parameter.
 
 **Citation System**
 - Inline citation bubbles `[1]` `[2]` in every answer

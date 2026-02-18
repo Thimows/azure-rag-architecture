@@ -22,6 +22,8 @@ import sys
 import json
 import time
 
+import pyspark.sql.functions as F
+
 sys.path.append("../")
 from utils.azure_clients import get_embeddings_client
 from utils.quality_checks import validate_embeddings
@@ -49,15 +51,15 @@ if not chunk_ids_raw:
 chunk_ids = [cid.strip() for cid in chunk_ids_raw.split(",") if cid.strip()]
 print(f"Generating embeddings for {len(chunk_ids)} chunks")
 
+# Get document IDs for status updates (extract from chunk IDs: "{doc_id}_chunk_{n}")
+document_ids = list(set(cid.rsplit("_chunk_", 1)[0] for cid in chunk_ids))
+
+from utils.db_status import update_document_status
+db_url = dbutils.secrets.get(scope=dbutils.widgets.get("secrets_scope"), key="DATABASE_URL")
+
 # COMMAND ----------
 
 client = get_embeddings_client()
-
-# COMMAND ----------
-
-df = spark.table(input_table).filter(spark.col("id").isin(chunk_ids))
-chunks = df.collect()
-print(f"Read {len(chunks)} chunks from {input_table}")
 
 # COMMAND ----------
 
@@ -88,44 +90,51 @@ def generate_embeddings_batch(texts: list[str], retries: int = 0) -> list[list[f
 
 # COMMAND ----------
 
-all_results = []
-total_batches = (len(chunks) + batch_size - 1) // batch_size
+try:
+    df = spark.table(input_table).filter(F.col("id").isin(chunk_ids))
+    chunks = df.collect()
+    print(f"Read {len(chunks)} chunks from {input_table}")
 
-for batch_idx in range(total_batches):
-    start = batch_idx * batch_size
-    end = min(start + batch_size, len(chunks))
-    batch_chunks = chunks[start:end]
-    batch_texts = [row["content"] for row in batch_chunks]
+    all_results = []
+    total_batches = (len(chunks) + batch_size - 1) // batch_size
 
-    print(f"  Batch {batch_idx + 1}/{total_batches} ({len(batch_texts)} chunks)")
+    for batch_idx in range(total_batches):
+        start = batch_idx * batch_size
+        end = min(start + batch_size, len(chunks))
+        batch_chunks = chunks[start:end]
+        batch_texts = [row["content"] for row in batch_chunks]
 
-    embeddings = generate_embeddings_batch(batch_texts)
+        print(f"  Batch {batch_idx + 1}/{total_batches} ({len(batch_texts)} chunks)")
 
-    is_valid, errors = validate_embeddings(embeddings, expected_dim=expected_dims)
-    if not is_valid:
-        print(f"    WARNING: Embedding validation issues: {errors}")
+        embeddings = generate_embeddings_batch(batch_texts)
 
-    for i, row in enumerate(batch_chunks):
-        result = row.asDict()
-        result["content_vector"] = embeddings[i]
-        all_results.append(result)
+        is_valid, errors = validate_embeddings(embeddings, expected_dim=expected_dims)
+        if not is_valid:
+            print(f"    WARNING: Embedding validation issues: {errors}")
 
-    if batch_idx < total_batches - 1:
-        time.sleep(0.5)
+        for i, row in enumerate(batch_chunks):
+            result = row.asDict()
+            result["content_vector"] = embeddings[i]
+            all_results.append(result)
 
-print(f"Generated embeddings for {len(all_results)} chunks")
+        if batch_idx < total_batches - 1:
+            time.sleep(0.5)
+
+    print(f"Generated embeddings for {len(all_results)} chunks")
+
+    result_df = spark.createDataFrame(all_results)
+    result_df.write.mode("append").saveAsTable(output_table)
+
+    print(f"Appended {len(all_results)} chunks with embeddings to {output_table}")
+
+except Exception as e:
+    update_document_status(document_ids, "failed", db_url, error=f"Embedding generation failed: {e}")
+    raise
 
 # COMMAND ----------
-
-result_df = spark.createDataFrame(all_results)
-result_df.write.mode("append").saveAsTable(output_table)
 
 dbutils.jobs.taskValues.set(key="chunk_ids", value=chunk_ids_raw)
 dbutils.jobs.taskValues.set(key="organization_id", value=organization_id)
 dbutils.jobs.taskValues.set(key="folder_id", value=folder_id)
-
-print(f"Appended {len(all_results)} chunks with embeddings to {output_table}")
-
-# COMMAND ----------
 
 dbutils.notebook.exit(json.dumps({"status": "SUCCESS", "embedded_count": len(all_results)}))
