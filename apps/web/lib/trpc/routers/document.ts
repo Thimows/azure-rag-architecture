@@ -10,8 +10,11 @@ import {
   StorageSharedKeyCredential,
 } from "@azure/storage-blob"
 
-function generateSasUrl(blobUrl: string): string {
+function generateSasUrl(blobPath: string): string {
   const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING
+  const containerName =
+    process.env.AZURE_STORAGE_CONTAINER_NAME ?? "documents"
+
   if (!connectionString) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
@@ -19,19 +22,6 @@ function generateSasUrl(blobUrl: string): string {
     })
   }
 
-  const blobServiceClient =
-    BlobServiceClient.fromConnectionString(connectionString)
-
-  // Parse the blob URL to extract container and blob path
-  const url = new URL(blobUrl)
-  const pathParts = url.pathname.split("/").filter(Boolean)
-  const containerName = pathParts[0]!
-  const blobName = pathParts.slice(1).join("/")
-
-  const containerClient = blobServiceClient.getContainerClient(containerName)
-  const blobClient = containerClient.getBlobClient(blobName)
-
-  // Extract account name and key from connection string for SAS generation
   const accountName = connectionString.match(/AccountName=([^;]+)/)?.[1]
   const accountKey = connectionString.match(/AccountKey=([^;]+)/)?.[1]
 
@@ -42,6 +32,12 @@ function generateSasUrl(blobUrl: string): string {
     })
   }
 
+  // blobPath is a relative path like "orgId/folderId/file.pdf"
+  const blobServiceClient =
+    BlobServiceClient.fromConnectionString(connectionString)
+  const containerClient = blobServiceClient.getContainerClient(containerName)
+  const blobClient = containerClient.getBlobClient(blobPath)
+
   const credential = new StorageSharedKeyCredential(accountName, accountKey)
   const startsOn = new Date()
   const expiresOn = new Date(startsOn.getTime() + 60 * 60 * 1000) // 1 hour
@@ -49,10 +45,12 @@ function generateSasUrl(blobUrl: string): string {
   const sasToken = generateBlobSASQueryParameters(
     {
       containerName,
-      blobName,
+      blobName: blobPath,
       permissions: BlobSASPermissions.parse("r"),
       startsOn,
       expiresOn,
+      contentDisposition: "inline",
+      contentType: "application/pdf",
     },
     credential,
   ).toString()

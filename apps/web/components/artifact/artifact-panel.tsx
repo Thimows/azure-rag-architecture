@@ -1,11 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import dynamic from "next/dynamic"
 import {
   FileText,
   FileSpreadsheet,
   File,
   FolderOpen,
+  ChevronRight,
   Loader2,
 } from "lucide-react"
 
@@ -20,6 +22,11 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const PdfViewer = dynamic(
   () =>
@@ -34,18 +41,26 @@ const PdfViewer = dynamic(
   },
 )
 
-function FileIcon({ fileType }: { fileType?: string }) {
-  if (fileType?.includes("pdf"))
-    return <FileText className="size-4 text-red-500" />
-  if (fileType?.includes("word") || fileType?.includes("docx"))
-    return <FileSpreadsheet className="size-4 text-blue-500" />
-  return <File className="size-4 text-muted-foreground" />
+/** Extract just the filename from a blob path like "orgId/folderId/file.pdf" */
+function getFileName(documentName: string): string {
+  const parts = documentName.split("/")
+  return parts[parts.length - 1] ?? documentName
+}
+
+function FileIcon({ name, fileType }: { name: string; fileType?: string }) {
+  const lower = (fileType ?? name).toLowerCase()
+  if (lower.includes("pdf"))
+    return <FileText className="size-4 shrink-0 text-red-500" />
+  if (lower.includes("word") || lower.includes("docx"))
+    return <FileSpreadsheet className="size-4 shrink-0 text-blue-500" />
+  return <File className="size-4 shrink-0 text-muted-foreground" />
 }
 
 function isPdf(citation: Citation): boolean {
+  const name = getFileName(citation.documentName).toLowerCase()
   return (
-    citation.fileType?.includes("pdf") === true ||
-    citation.documentName.toLowerCase().endsWith(".pdf")
+    citation.fileType?.toLowerCase().includes("pdf") === true ||
+    name.endsWith(".pdf")
   )
 }
 
@@ -55,33 +70,32 @@ interface ArtifactPanelProps {
 }
 
 export function ArtifactPanel({ citation, onClose }: ArtifactPanelProps) {
+  const [chunkOpen, setChunkOpen] = useState(false)
+  const showPdf = citation ? isPdf(citation) : false
   const { data: viewUrlData, isLoading: isLoadingUrl } =
     trpc.document.getViewUrl.useQuery(
       { documentId: citation?.documentId ?? "" },
-      { enabled: !!citation?.documentId },
+      { enabled: !!citation?.documentId && showPdf },
     )
+
+  const displayName = citation ? getFileName(citation.documentName) : ""
 
   return (
     <Sheet open={!!citation} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-base">
-            <FileIcon fileType={citation?.fileType} />
-            <span className="truncate">{citation?.documentName}</span>
+            <FileIcon name={displayName} fileType={citation?.fileType} />
+            <span className="truncate">{displayName}</span>
           </SheetTitle>
         </SheetHeader>
         {citation && (
-          <div className="mt-4 space-y-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4">
             {/* Metadata badges */}
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">Source [{citation.number}]</Badge>
               {citation.pageNumber > 0 && (
                 <Badge variant="outline">Page {citation.pageNumber}</Badge>
-              )}
-              {citation.relevanceScore > 0 && (
-                <Badge variant="outline">
-                  Score: {(citation.relevanceScore * 100).toFixed(0)}%
-                </Badge>
               )}
               {citation.folderName && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -92,21 +106,10 @@ export function ArtifactPanel({ citation, onClose }: ArtifactPanelProps) {
             </div>
             <Separator />
 
-            <ScrollArea className="h-[calc(100vh-220px)]">
-              {/* Chunk text reference */}
-              <div className="mb-4 rounded-lg bg-muted p-3">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  Referenced text
-                </p>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {citation.chunkText}
-                </p>
-              </div>
-
-              {/* PDF viewer or fallback */}
-              {isPdf(citation) && (
-                <>
-                  <Separator className="my-4" />
+            <ScrollArea className="min-h-0 flex-1">
+              {/* PDF viewer (shown first) */}
+              {showPdf && (
+                <div className="mb-4">
                   {isLoadingUrl ? (
                     <div className="flex h-96 items-center justify-center">
                       <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -121,8 +124,26 @@ export function ArtifactPanel({ citation, onClose }: ArtifactPanelProps) {
                       Unable to load document preview.
                     </p>
                   )}
-                </>
+                  <Separator className="mt-4" />
+                </div>
               )}
+
+              {/* Collapsible referenced text */}
+              <Collapsible open={chunkOpen} onOpenChange={setChunkOpen}>
+                <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+                  <ChevronRight
+                    className={`size-3.5 shrink-0 transition-transform ${chunkOpen ? "rotate-90" : ""}`}
+                  />
+                  Referenced text
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-2 rounded-lg bg-muted p-3">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {citation.chunkText}
+                    </p>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </ScrollArea>
           </div>
         )}

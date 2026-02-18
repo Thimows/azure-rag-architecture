@@ -21,11 +21,18 @@ interface CitationBubbleProps {
   onClick?: (citation: Citation) => void
 }
 
-function FileIcon({ fileType }: { fileType?: string }) {
-  if (fileType?.includes("pdf")) return <FileText className="size-4 text-red-500" />
-  if (fileType?.includes("word") || fileType?.includes("docx"))
-    return <FileSpreadsheet className="size-4 text-blue-500" />
-  return <File className="size-4 text-muted-foreground" />
+/** Extract just the filename from a blob path like "orgId/folderId/file.pdf" */
+function getFileName(documentName: string): string {
+  const parts = documentName.split("/")
+  return parts[parts.length - 1] ?? documentName
+}
+
+function FileIcon({ name, fileType }: { name: string; fileType?: string }) {
+  const lower = (fileType ?? name).toLowerCase()
+  if (lower.includes("pdf")) return <FileText className="size-3.5 shrink-0 text-red-500" />
+  if (lower.includes("word") || lower.includes("docx"))
+    return <FileSpreadsheet className="size-3.5 shrink-0 text-blue-500" />
+  return <File className="size-3.5 shrink-0 text-muted-foreground" />
 }
 
 export function CitationBubble({
@@ -36,7 +43,7 @@ export function CitationBubble({
   const bubble = (
     <button
       type="button"
-      className="mx-0.5 inline-flex size-5 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/20"
+      className="citation-bubble mx-0.5 inline-flex size-5 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/20"
       onClick={() => citation && onClick?.(citation)}
     >
       {number}
@@ -45,6 +52,8 @@ export function CitationBubble({
 
   if (!citation) return bubble
 
+  const displayName = getFileName(citation.documentName)
+
   return (
     <HoverCard openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>{bubble}</HoverCardTrigger>
@@ -52,9 +61,11 @@ export function CitationBubble({
         <div className="space-y-2">
           {/* Header: icon + document name */}
           <div className="flex items-start gap-2">
-            <FileIcon fileType={citation.fileType} />
+            <div className="shrink-0 pt-0.5">
+              <FileIcon name={displayName} fileType={citation.fileType} />
+            </div>
             <p className="text-sm font-medium leading-tight">
-              {citation.documentName}
+              {displayName}
             </p>
           </div>
 
@@ -83,7 +94,7 @@ export function CitationBubble({
           {/* View source link */}
           <button
             type="button"
-            className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline"
             onClick={() => onClick?.(citation)}
           >
             <ExternalLink className="size-3" />
