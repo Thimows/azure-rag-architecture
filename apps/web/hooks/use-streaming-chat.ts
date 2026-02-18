@@ -20,6 +20,8 @@ export function useStreamingChat({
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState("")
   const abortRef = useRef<AbortController | null>(null)
+  const rafRef = useRef<number>(0)
+  const contentRef = useRef("")
 
   const sendMessage = useCallback(
     async (query: string) => {
@@ -36,6 +38,7 @@ export function useStreamingChat({
 
       const controller = new AbortController()
       abortRef.current = controller
+      contentRef.current = ""
 
       let accumulated = ""
       const newCitations: Citation[] = []
@@ -51,7 +54,15 @@ export function useStreamingChat({
         )) {
           if (event.type === "chunk") {
             accumulated += event.content
-            setStreamingContent(accumulated)
+            contentRef.current = accumulated
+            // Throttle UI updates to ~60fps via requestAnimationFrame
+            // so React doesn't batch all chunks into a single render
+            if (!rafRef.current) {
+              rafRef.current = requestAnimationFrame(() => {
+                setStreamingContent(contentRef.current)
+                rafRef.current = 0
+              })
+            }
           } else if (event.type === "citation") {
             newCitations.push({
               number: event.number,
@@ -66,6 +77,12 @@ export function useStreamingChat({
           } else if (event.type === "done") {
             break
           }
+        }
+
+        // Cancel any pending animation frame and flush final content
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current)
+          rafRef.current = 0
         }
 
         setMessages([
@@ -86,6 +103,10 @@ export function useStreamingChat({
           ])
         }
       } finally {
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current)
+          rafRef.current = 0
+        }
         setIsStreaming(false)
         abortRef.current = null
       }
