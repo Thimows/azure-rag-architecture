@@ -6,7 +6,6 @@ import { useStreamingChat } from "@/hooks/use-streaming-chat"
 import { MessageList } from "@/components/chat/message-list"
 import { MessageInput } from "@/components/chat/message-input"
 import { EmptyState } from "@/components/chat/empty-state"
-import { SourcesPane } from "@/components/citations/sources-pane"
 import { ArtifactPanel } from "@/components/artifact/artifact-panel"
 import type { ChatMessage, Citation } from "@/lib/types"
 
@@ -14,7 +13,6 @@ interface ChatInterfaceProps {
   organizationId: string
   chatId?: string
   initialMessages?: ChatMessage[]
-  initialCitations?: Citation[]
   onFirstMessage?: (message: string) => Promise<string>
 }
 
@@ -22,7 +20,6 @@ export function ChatInterface({
   organizationId,
   chatId,
   initialMessages = [],
-  initialCitations = [],
   onFirstMessage,
 }: ChatInterfaceProps) {
   const chatIdRef = useRef(chatId)
@@ -66,7 +63,6 @@ export function ChatInterface({
     messages,
     setMessages,
     citations,
-    setCitations,
     isStreaming,
     streamingContent,
     thinkingContent,
@@ -79,13 +75,11 @@ export function ChatInterface({
     onAssistantComplete: handleAssistantComplete,
   })
 
-  const [hoveredCitation, setHoveredCitation] = useState<Citation | null>(null)
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null)
 
-  // Initialize with existing messages
+  // Initialize with existing messages (which now include per-message citations)
   if (initialMessages.length > 0 && messages.length === 0) {
     setMessages(initialMessages)
-    setCitations(initialCitations)
   }
 
   async function handleSend(query: string) {
@@ -97,8 +91,6 @@ export function ChatInterface({
   }
 
   const showEmpty = messages.length === 0 && !isStreaming
-  const lastAssistantCitations =
-    citations.length > 0 ? citations : initialCitations
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -111,15 +103,7 @@ export function ChatInterface({
           isStreaming={isStreaming}
           thinkingContent={thinkingContent}
           isThinking={isThinking}
-          citations={lastAssistantCitations}
-          onCitationHover={setHoveredCitation}
-          onCitationClick={setSelectedCitation}
-        />
-      )}
-      {!isStreaming && lastAssistantCitations.length > 0 && (
-        <SourcesPane
-          citations={lastAssistantCitations}
-          hoveredCitation={hoveredCitation}
+          streamingCitations={citations}
           onCitationClick={setSelectedCitation}
         />
       )}

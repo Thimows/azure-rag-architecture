@@ -11,6 +11,7 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.31.0",
     "@repo/ui": "*",
     "@tanstack/react-query": "^5.90.21",
     "@trpc/client": "^11.10.0",
@@ -27,6 +28,7 @@
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-pdf": "^10.3.0",
     "streamdown": "^2.2.0",
     "tailwind-merge": "^3.4.1",
     "zod": "^4.3.6"

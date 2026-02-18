@@ -1,6 +1,7 @@
 export interface ChatMessage {
   role: "user" | "assistant"
   content: string
+  citations?: Citation[]
 }
 
 export interface Citation {
@@ -11,6 +12,9 @@ export interface Citation {
   pageNumber: number
   chunkText: string
   relevanceScore: number
+  folderId?: string
+  folderName?: string
+  fileType?: string
 }
 
 export interface SSEChunkEvent {
@@ -28,6 +32,7 @@ export interface SSECitationEvent {
     page_number: number
     chunk_text: string
     relevance_score: number
+    folder_id: string
   }
 }
 

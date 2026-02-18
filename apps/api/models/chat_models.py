@@ -46,6 +46,8 @@ class CitationSource(BaseModel):
     document_url: str
     page_number: int
     chunk_text: str
+    relevance_score: float = 0.0
+    folder_id: str = ""
 
 
 class Citation(BaseModel):
@@ -58,6 +60,7 @@ class Citation(BaseModel):
     page_number: int
     chunk_text: str
     relevance_score: float = 0.0
+    folder_id: str = ""
 
 
 class ChatQueryResponse(BaseModel):

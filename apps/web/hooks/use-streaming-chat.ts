@@ -72,6 +72,7 @@ export function useStreamingChat({
               pageNumber: event.source.page_number,
               chunkText: event.source.chunk_text,
               relevanceScore: event.source.relevance_score,
+              folderId: event.source.folder_id || undefined,
             })
             setCitations([...newCitations])
           } else if (event.type === "done") {
@@ -81,7 +82,7 @@ export function useStreamingChat({
 
         setMessages([
           ...history,
-          { role: "assistant", content: accumulated },
+          { role: "assistant", content: accumulated, citations: newCitations },
         ])
         setStreamingContent("")
 

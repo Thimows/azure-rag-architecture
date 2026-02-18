@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { createTRPCRouter, protectedProcedure } from "../init"
-import { chat, message, citation } from "@/lib/db/schema"
-import { eq, and, desc, asc } from "drizzle-orm"
+import { chat, message, citation, document, folder } from "@/lib/db/schema"
+import { eq, and, desc, asc, inArray } from "drizzle-orm"
 import { generateId } from "@/lib/id"
 
 export const chatRouter = createTRPCRouter({
@@ -39,7 +39,7 @@ export const chatRouter = createTRPCRouter({
       })
 
       if (!chatRecord || chatRecord.userId !== ctx.session.user.id) {
-        return { messages: [], citations: [], organizationId: "" }
+        return { title: null, messages: [], organizationId: "" }
       }
 
       const messages = await ctx.db
@@ -48,33 +48,85 @@ export const chatRouter = createTRPCRouter({
         .where(eq(message.chatId, input.chatId))
         .orderBy(asc(message.createdAt))
 
-      // Get citations for the last assistant message
-      const lastAssistant = [...messages]
-        .reverse()
-        .find((m) => m.role === "assistant")
-      let citations: {
-        number: number
-        documentId: string
-        documentName: string
-        pageNumber: number
-        chunkText: string
-        relevanceScore: number
-      }[] = []
+      // Fetch citations for ALL assistant messages in one batch
+      const assistantIds = messages
+        .filter((m) => m.role === "assistant")
+        .map((m) => m.id)
 
-      if (lastAssistant) {
+      const citationsByMessage = new Map<
+        string,
+        {
+          number: number
+          documentId: string
+          documentName: string
+          documentUrl: string
+          pageNumber: number
+          chunkText: string
+          relevanceScore: number
+          folderId?: string
+          folderName?: string
+          fileType?: string
+        }[]
+      >()
+
+      if (assistantIds.length > 0) {
         const rows = await ctx.db
           .select()
           .from(citation)
-          .where(eq(citation.messageId, lastAssistant.id))
+          .where(inArray(citation.messageId, assistantIds))
 
-        citations = rows.map((c) => ({
-          number: c.number,
-          documentId: c.documentId ?? "",
-          documentName: c.documentName,
-          pageNumber: c.pageNumber ?? 0,
-          chunkText: c.chunkText,
-          relevanceScore: c.relevanceScore ?? 0,
-        }))
+        // Collect unique documentIds for enrichment
+        const docIds = [
+          ...new Set(rows.map((c) => c.documentId).filter(Boolean)),
+        ] as string[]
+
+        // Batch query documents + folders for enrichment
+        const docMap = new Map<
+          string,
+          { blobUrl: string; fileType: string; folderId: string; folderName: string | null }
+        >()
+        if (docIds.length > 0) {
+          const docs = await ctx.db
+            .select({
+              id: document.id,
+              blobUrl: document.blobUrl,
+              fileType: document.fileType,
+              folderId: document.folderId,
+              folderName: folder.name,
+            })
+            .from(document)
+            .leftJoin(folder, eq(document.folderId, folder.id))
+            .where(inArray(document.id, docIds))
+
+          for (const doc of docs) {
+            docMap.set(doc.id, {
+              blobUrl: doc.blobUrl,
+              fileType: doc.fileType,
+              folderId: doc.folderId,
+              folderName: doc.folderName,
+            })
+          }
+        }
+
+        // Group citations by messageId
+        for (const c of rows) {
+          const enrichment = c.documentId ? docMap.get(c.documentId) : undefined
+          const mapped = {
+            number: c.number,
+            documentId: c.documentId ?? "",
+            documentName: c.documentName,
+            documentUrl: enrichment?.blobUrl ?? "",
+            pageNumber: c.pageNumber ?? 0,
+            chunkText: c.chunkText,
+            relevanceScore: c.relevanceScore ?? 0,
+            folderId: enrichment?.folderId,
+            folderName: enrichment?.folderName ?? undefined,
+            fileType: enrichment?.fileType,
+          }
+          const arr = citationsByMessage.get(c.messageId) ?? []
+          arr.push(mapped)
+          citationsByMessage.set(c.messageId, arr)
+        }
       }
 
       return {
@@ -82,8 +134,8 @@ export const chatRouter = createTRPCRouter({
         messages: messages.map((m) => ({
           role: m.role as "user" | "assistant",
           content: m.content,
+          citations: citationsByMessage.get(m.id),
         })),
-        citations,
         organizationId: chatRecord.organizationId,
       }
     }),

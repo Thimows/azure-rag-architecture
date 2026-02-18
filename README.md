@@ -249,6 +249,7 @@ Designed for enterprise environments where data privacy and compliance are non-n
 - RBAC with Azure Managed Identities (no credentials in code)
 - Encryption at rest and in transit (TLS 1.2+)
 - Input validation and rate limiting on all API endpoints
+- On-demand document access via short-lived SAS tokens — no permanent public URLs. When viewing a cited document, the app generates a read-only Azure Blob Storage SAS URL scoped to that specific blob, valid for one hour. Expired tokens are never stored.
 
 <!-- TODO: Add architecture diagram -->
 <!-- ![Architecture Diagram](docs/assets/architecture.png) -->

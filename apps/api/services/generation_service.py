@@ -105,6 +105,8 @@ def generate_answer_streaming(
                 "document_url": citation.document_url,
                 "page_number": citation.page_number,
                 "chunk_text": citation.chunk_text,
+                "relevance_score": citation.relevance_score,
+                "folder_id": citation.folder_id,
             },
         })
         yield f"data: {event}\n\n"
@@ -150,6 +152,7 @@ def extract_citations(
                 page_number=chunk.page_number,
                 chunk_text=chunk.content,
                 relevance_score=chunk.reranker_score or chunk.search_score,
+                folder_id=chunk.folder_id,
             ))
 
     return citations

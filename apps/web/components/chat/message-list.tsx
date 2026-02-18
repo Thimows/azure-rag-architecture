@@ -12,8 +12,7 @@ interface MessageListProps {
   isStreaming: boolean
   thinkingContent: string
   isThinking: boolean
-  citations: Citation[]
-  onCitationHover?: (citation: Citation | null) => void
+  streamingCitations: Citation[]
   onCitationClick?: (citation: Citation) => void
 }
 
@@ -23,8 +22,7 @@ export function MessageList({
   isStreaming,
   thinkingContent,
   isThinking,
-  citations,
-  onCitationHover,
+  streamingCitations,
   onCitationClick,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -42,9 +40,8 @@ export function MessageList({
             {msg.role === "assistant" ? (
               <StreamingMessage
                 content={msg.content}
-                citations={citations}
+                citations={msg.citations ?? []}
                 isComplete
-                onCitationHover={onCitationHover}
                 onCitationClick={onCitationClick}
               />
             ) : undefined}
@@ -63,8 +60,7 @@ export function MessageList({
             {streamingContent ? (
               <StreamingMessage
                 content={streamingContent}
-                citations={citations}
-                onCitationHover={onCitationHover}
+                citations={streamingCitations}
                 onCitationClick={onCitationClick}
               />
             ) : !thinkingContent ? (

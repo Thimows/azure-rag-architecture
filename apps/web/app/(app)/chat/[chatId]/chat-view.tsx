@@ -68,10 +68,6 @@ export function ChatView({ chatId }: { chatId: string }) {
       organizationId={data.organizationId}
       chatId={chatId}
       initialMessages={data.messages}
-      initialCitations={data.citations.map((c) => ({
-        ...c,
-        documentUrl: "",
-      }))}
     />
   )
 }
