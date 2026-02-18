@@ -85,7 +85,7 @@ async def chat_query(request: ChatRequest):
 
     if not chunks:
         return ChatQueryResponse(
-            answer="I couldn't find any relevant documents to answer your question.",
+            answer="I couldn't find any relevant documents to answer your question. This could mean no documents have been uploaded yet, or the uploaded documents don't contain information related to your query.\n\nYou can upload documents through the **Files** page in the sidebar, then try asking again.",
             citations=[],
             query_rewritten=rewritten_query,
         )
@@ -114,7 +114,7 @@ def _no_results_stream():
     """Yield a 'no results' SSE stream."""
     event = json.dumps({
         "type": "chunk",
-        "content": "I couldn't find any relevant documents to answer your question.",
+        "content": "I couldn't find any relevant documents to answer your question. This could mean no documents have been uploaded yet, or the uploaded documents don't contain information related to your query.\n\nYou can upload documents through the **Files** page in the sidebar, then try asking again.",
     })
     yield f"data: {event}\n\n"
     yield f"data: {json.dumps({'type': 'done'})}\n\n"

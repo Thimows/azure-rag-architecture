@@ -79,3 +79,8 @@ output "postgresql_connection_string" {
   value     = module.postgresql.connection_string
   sensitive = true
 }
+
+output "dev_ip" {
+  value       = module.postgresql.dev_ip
+  description = "Your public IP address, whitelisted in the PostgreSQL firewall"
+}

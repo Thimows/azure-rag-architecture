@@ -23,3 +23,7 @@ output "connection_string" {
   value     = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${var.administrator_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.app.name}?sslmode=require"
   sensitive = true
 }
+
+output "dev_ip" {
+  value = data.http.my_ip.response_body
+}

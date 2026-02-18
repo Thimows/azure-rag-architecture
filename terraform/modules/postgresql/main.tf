@@ -19,10 +19,22 @@ resource "azurerm_postgresql_flexible_server_database" "app" {
   collation = "en_US.utf8"
 }
 
-# Allow Azure services (e.g. App Service, local dev)
+# Allow Azure services
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure" {
   name             = "AllowAzureServices"
   server_id        = azurerm_postgresql_flexible_server.main.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "0.0.0.0"
+}
+
+# Allow the developer's current public IP (auto-detected)
+data "http" "my_ip" {
+  url = "https://api.ipify.org"
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_dev_ip" {
+  name             = "AllowDevIP"
+  server_id        = azurerm_postgresql_flexible_server.main.id
+  start_ip_address = data.http.my_ip.response_body
+  end_ip_address   = data.http.my_ip.response_body
 }

@@ -40,12 +40,16 @@ export default function SignUpPage() {
       return
     }
 
-    // Auto-create a default organization for the user
+    // Auto-create a default organization and set it as active
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
-    await authClient.organization.create({
+    const { data: org } = await authClient.organization.create({
       name: `${name}'s Workspace`,
       slug: slug || "workspace",
     })
+
+    if (org) {
+      await authClient.organization.setActive({ organizationId: org.id })
+    }
 
     router.push("/")
     router.refresh()

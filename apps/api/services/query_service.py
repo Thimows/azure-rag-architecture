@@ -37,5 +37,6 @@ def rewrite_query(
     ]
 
     response = client.complete(messages=messages, temperature=0.0, max_tokens=256)
-    rewritten = response.choices[0].message.content.strip()
+    content = response.choices[0].message.content
+    rewritten = content.strip() if content else ""
     return rewritten if rewritten else query

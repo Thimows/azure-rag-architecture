@@ -173,9 +173,54 @@ npm install
 npm run dev
 ```
 
-The setup script handles everything: Terraform provisioning, `.env` file generation from Terraform outputs, search index creation, Databricks secrets configuration and bundle deployment. It's idempotent and safe to re-run anytime.
+The setup script handles everything: Terraform provisioning, `.env` file generation from Terraform outputs, database schema push, search index creation, Databricks secrets configuration and bundle deployment. It's idempotent and safe to re-run anytime.
+
+On first run, the script auto-generates a secure PostgreSQL password and stores it in `terraform/terraform.tfvars`. If you need the password later (e.g. for a database client), you can find it there.
+
+### Azure Costs
+
+The setup provisions paid Azure resources. The main cost driver is **Azure AI Search** which defaults to the `basic` SKU (~$75/month). This is required for semantic search and the built-in reranker. Semantic search is enabled on the `free` tier (1,000 queries/month at no extra cost on top of the basic SKU). For higher volumes, you can upgrade to `standard` in `terraform/terraform.tfvars`:
+
+```hcl
+# Semantic search tiers (set on the search service, separate from the SKU)
+# free     — 1,000 semantic queries/month (default)
+# standard — unlimited, billed per 1,000 queries
+```
+
+Other resources (PostgreSQL, Storage, AI Foundry, Databricks) also incur costs based on usage. Review the defaults in `terraform/terraform.tfvars` before running the setup script. Remember to tear down resources with `cd terraform && terraform destroy` when you're done to avoid ongoing charges.
 
 The FastAPI server starts at `http://localhost:4001` and the Next.js app at `http://localhost:4000`.
+
+### Database Access (Local Development)
+
+The Azure PostgreSQL server is protected by a firewall. During setup, Terraform automatically detects your public IP and adds a firewall rule so you can connect from your local machine. You'll see a message like:
+
+```
+[OK] PostgreSQL firewall: whitelisted your IP (203.0.113.42) for local development
+```
+
+If your IP changes (e.g. switching networks), re-run `./scripts/setup.sh` — it will update the firewall rule automatically. You can also manage firewall rules manually in the Azure Portal under your PostgreSQL Flexible Server > Networking.
+
+## Deploying to Azure
+
+This project is designed to run locally during development, with all backend services (AI, search, storage, database) already hosted on Azure. When you're ready to deploy the application itself, both apps map directly to Azure App Service:
+
+| App | Azure Service | Runtime |
+|-----|--------------|---------|
+| `apps/web` (Next.js) | Azure App Service | Node.js |
+| `apps/api` (FastAPI) | Azure App Service | Python |
+
+**What you need to add:**
+
+1. Two Azure App Service resources in Terraform (one Node.js, one Python)
+2. Set the same environment variables from your `.env` files as App Service configuration
+3. Optionally, an Azure Front Door or Application Gateway for routing both apps behind a single domain
+
+**What already works:**
+
+- The `AllowAzureServices` PostgreSQL firewall rule already permits connections from App Service — no IP whitelisting needed in production
+- All other Azure services (AI Foundry, Search, Storage, Document Intelligence) are accessible from within the same tenant
+- No code changes required — the same Next.js and FastAPI apps run as-is on App Service
 
 ## Security
 

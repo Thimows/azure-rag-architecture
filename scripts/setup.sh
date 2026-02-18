@@ -84,15 +84,21 @@ if [ ! -f terraform.tfvars ]; then
   echo "    Storage account      = stenterpriserag"
   echo "    Databricks SKU       = premium"
   echo ""
-  echo "    PostgreSQL password   = (set in terraform.tfvars)"
+  echo "    PostgreSQL password   = (auto-generated, saved in terraform.tfvars)"
   echo ""
   echo "    Chat model           = Kimi K2.5 (Moonshot AI)"
   echo "    Embedding model      = text-embedding-3-large (v1)"
-  echo "    Search SKU           = free"
+  echo "    Search SKU           = basic (~\$75/month, required for semantic search)"
+  echo ""
+  echo -e "  ${YELLOW}NOTE:${NC} Your public IP will be auto-detected and whitelisted in the"
+  echo "  PostgreSQL firewall for local development. If you are on a VPN, consider"
+  echo "  turning it off so we detect the right IP. If your IP changes later,"
+  echo "  just re-run this script to update the firewall rule."
   echo ""
   read -rp "Press Enter to continue with defaults, or Ctrl+C to edit terraform.tfvars.example first... "
-  cp terraform.tfvars.example terraform.tfvars
-  ok "Created terraform.tfvars"
+  PG_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)
+  sed "s/your-secure-password/$PG_PASSWORD/" terraform.tfvars.example > terraform.tfvars
+  ok "Created terraform.tfvars (PostgreSQL password auto-generated)"
 fi
 
 info "Running terraform init..."
@@ -104,8 +110,14 @@ terraform apply -auto-approve
 ok "Azure resources provisioned"
 
 get_output() {
-  terraform output -raw "$1" 2>/dev/null
+  terraform -chdir="$ROOT_DIR/terraform" output -raw "$1" 2>/dev/null
 }
+
+DEV_IP=$(get_output dev_ip)
+ok "PostgreSQL firewall: whitelisted your IP ($DEV_IP) for local development"
+info "  In production, Azure services connect via the AllowAzureServices rule."
+info "  If your IP changes, re-run this script or update the firewall in the Azure Portal."
+echo ""
 
 # ─── Step 2: Generate .env files from Terraform outputs ─────────────
 info "Step 2/6 — Generating .env files from Terraform outputs..."

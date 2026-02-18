@@ -16,9 +16,9 @@ variable "embedding_model_name" {
 }
 
 variable "search_service_sku" {
-  description = "SKU tier for Azure AI Search"
+  description = "SKU tier for Azure AI Search (basic required for semantic search)"
   type        = string
-  default     = "free"
+  default     = "basic"
 }
 
 variable "storage_account_name" {
