@@ -66,7 +66,8 @@ try:
 
     all_chunks = []
 
-    for doc in documents:
+    for doc_row in documents:
+        doc = doc_row.asDict()
         document_id = doc["document_id"]
         document_name = doc["document_name"]
         document_url = doc["document_url"]

@@ -1,12 +1,24 @@
 "use client"
 
+import { useEffect } from "react"
 import { trpc } from "@/lib/trpc/client"
+import { useHeader } from "@/components/header-context"
 import { ChatInterface } from "@/components/chat/chat-interface"
 import { MessageInput } from "@/components/chat/message-input"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function ChatView({ chatId }: { chatId: string }) {
   const { data, isPending } = trpc.chat.getMessages.useQuery({ chatId })
+  const { setTitle } = useHeader()
+
+  useEffect(() => {
+    if (isPending) {
+      setTitle("Loading...")
+    } else if (data?.title) {
+      setTitle(data.title)
+    }
+    return () => setTitle("Enterprise RAG")
+  }, [isPending, data?.title, setTitle])
 
   if (isPending) {
     return (

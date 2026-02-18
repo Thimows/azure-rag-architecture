@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { trpc } from "@/lib/trpc/client"
+import { useHeader } from "@/components/header-context"
 import { FolderList } from "@/components/files/folder-list"
 import { FolderCreateDialog } from "@/components/files/folder-create-dialog"
 import { DocumentTable } from "@/components/files/document-table"
@@ -13,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 export function FilesClient({ organizationId }: { organizationId: string }) {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   const utils = trpc.useUtils()
+  const { setTitle, setActions } = useHeader()
 
   const { data: folders, isPending: foldersLoading } =
     trpc.folder.list.useQuery()
@@ -40,6 +42,22 @@ export function FilesClient({ organizationId }: { organizationId: string }) {
     onSuccess: () => utils.document.list.invalidate(),
   })
 
+  useEffect(() => {
+    setTitle("Files")
+    setActions(
+      <FolderCreateDialog
+        onCreated={(id) => {
+          utils.folder.list.invalidate()
+          setSelectedFolder(id)
+        }}
+      />,
+    )
+    return () => {
+      setTitle("Enterprise RAG")
+      setActions(null)
+    }
+  }, [setTitle, setActions, utils.folder.list])
+
   function handleDeleteFolder(id: string) {
     if (selectedFolder === id) setSelectedFolder(null)
     deleteFolder.mutate({ id })
@@ -57,16 +75,6 @@ export function FilesClient({ organizationId }: { organizationId: string }) {
 
   return (
     <div className="flex flex-1 flex-col p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Files</h1>
-        <FolderCreateDialog
-          onCreated={(id) => {
-            utils.folder.list.invalidate()
-            setSelectedFolder(id)
-          }}
-        />
-      </div>
-
       <div className="flex flex-1 gap-6">
         {/* Folder sidebar */}
         <div className="w-64 shrink-0">

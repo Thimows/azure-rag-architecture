@@ -65,18 +65,19 @@ try:
     validation_errors = []
 
     for row in chunks:
+        r = row.asDict()
         doc = {
-            "id": row["id"],
-            "content": row["content"],
-            "content_vector": list(row["content_vector"]),
-            "document_id": row["document_id"],
-            "document_name": row["document_name"],
-            "document_url": row["document_url"],
-            "page_number": row.get("page_number") or 0,
-            "chunk_index": row["chunk_index"],
-            "metadata": row.get("metadata", "{}"),
-            "organization_id": row["organization_id"],
-            "folder_id": row["folder_id"],
+            "id": r["id"],
+            "content": r["content"],
+            "content_vector": list(r["content_vector"]),
+            "document_id": r["document_id"],
+            "document_name": r["document_name"],
+            "document_url": r["document_url"],
+            "page_number": r.get("page_number") or 0,
+            "chunk_index": r["chunk_index"],
+            "metadata": r.get("metadata", "{}"),
+            "organization_id": r["organization_id"],
+            "folder_id": r["folder_id"],
         }
 
         is_valid, errors = validate_index_document(doc)

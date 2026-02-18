@@ -13,7 +13,7 @@ dbutils.widgets.text("input_table", "rag_ingestion.chunks", "Input Chunks Table"
 dbutils.widgets.text("output_table", "rag_ingestion.chunks_with_embeddings", "Output Table")
 dbutils.widgets.text("secrets_scope", "rag-ingestion", "Databricks Secrets Scope")
 dbutils.widgets.text("batch_size", "100", "Embedding Batch Size")
-dbutils.widgets.text("max_retries", "3", "Max Retries per Batch")
+dbutils.widgets.text("max_retries", "5", "Max Retries per Batch")
 dbutils.widgets.text("embedding_dimensions", "3072", "Expected Embedding Dimensions")
 
 # COMMAND ----------
@@ -79,10 +79,10 @@ def generate_embeddings_batch(texts: list[str], retries: int = 0) -> list[list[f
 
     except Exception as e:
         if retries < max_retries:
-            wait_time = (2 ** retries) * 1.0
+            wait_time = (2 ** retries) * 5.0
             error_str = str(e)
             if "429" in error_str or "rate" in error_str.lower():
-                wait_time = max(wait_time, 10.0)
+                wait_time = max(wait_time, 60.0)
             print(f"  Retry {retries + 1}/{max_retries} after {wait_time}s: {error_str[:100]}")
             time.sleep(wait_time)
             return generate_embeddings_batch(texts, retries + 1)

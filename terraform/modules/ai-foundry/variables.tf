@@ -69,3 +69,9 @@ variable "embedding_deployment_name" {
   type        = string
   default     = "text-embedding-3-large"
 }
+
+variable "embedding_capacity" {
+  description = "Embedding model capacity in thousands of tokens per minute (e.g. 50 = 50K TPM)"
+  type        = number
+  default     = 50
+}

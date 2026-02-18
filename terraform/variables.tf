@@ -15,6 +15,12 @@ variable "embedding_model_name" {
   default     = "text-embedding-3-large"
 }
 
+variable "embedding_capacity" {
+  description = "Embedding model capacity in thousands of tokens per minute (e.g. 50 = 50K TPM)"
+  type        = number
+  default     = 50
+}
+
 variable "search_service_sku" {
   description = "SKU tier for Azure AI Search (basic required for semantic search)"
   type        = string

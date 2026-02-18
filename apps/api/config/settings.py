@@ -35,7 +35,6 @@ class Settings(BaseSettings):
     MAX_HISTORY_TURNS: int = 10
     SEARCH_TOP_K: int = 50
     CONTEXT_TOP_K: int = 10
-    RERANKING_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-12-v2"
 
 
 settings = Settings()

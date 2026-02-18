@@ -53,7 +53,7 @@ Every answer includes numbered citation bubbles that link back to the exact sour
 - Document parsing via Azure Document Intelligence with layout analysis
 - Custom chunking strategies (see below) — no dependency on Azure's built-in indexer pipeline, giving you full control over chunk size, overlap and splitting logic
 - Hybrid search combining vector, keyword and semantic ranking with RRF fusion
-- Optional cross-encoder reranking (benchmarkable against Azure's built-in semantic ranker)
+- Optional LLM-based reranking via GPT-5 Nano (benchmarkable against Azure's built-in semantic ranker)
 - Answer generation strictly grounded in retrieved context to reduce hallucination
 
 **Chunking Strategies**
@@ -102,7 +102,7 @@ All strategies use `tiktoken` with `cl100k_base` encoding for token counting. To
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Vercel Streamdown |
-| Backend | FastAPI, Python 3.9+, Pydantic, Sentence Transformers |
+| Backend | FastAPI, Python 3.9+, Pydantic |
 | AI Services | Azure AI Foundry (Mistral Large 3, GPT-5 Nano, text-embedding-3-large), Azure AI Search, Azure Document Intelligence |
 | Ingestion | Azure Databricks (premium tier), Databricks Asset Bundles, semantic chunking |
 | Infrastructure | Terraform (all Azure resources incl. Databricks workspace), Azure Storage Account |

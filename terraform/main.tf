@@ -14,6 +14,7 @@ module "ai_foundry" {
   location             = azurerm_resource_group.main.location
   project_prefix       = "${var.project_prefix}-${random_id.suffix.hex}"
   embedding_model_name = var.embedding_model_name
+  embedding_capacity   = var.embedding_capacity
 }
 
 module "azure_search" {
