@@ -100,28 +100,30 @@ export function ChatInterface({
   const showEmpty = messages.length === 0 && !isStreaming
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      {showEmpty ? (
-        <EmptyState />
-      ) : (
-        <MessageList
-          messages={messages}
-          streamingContent={streamingContent}
+    <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {showEmpty ? (
+          <EmptyState />
+        ) : (
+          <MessageList
+            messages={messages}
+            streamingContent={streamingContent}
+            isStreaming={isStreaming}
+            thinkingContent={thinkingContent}
+            isThinking={isThinking}
+            streamingCitations={citations}
+            onCitationClick={setSelectedCitation}
+          />
+        )}
+        <MessageInput
+          onSend={handleSend}
+          onStop={stop}
           isStreaming={isStreaming}
-          thinkingContent={thinkingContent}
-          isThinking={isThinking}
-          streamingCitations={citations}
-          onCitationClick={setSelectedCitation}
+          folders={folders}
+          selectedFolderIds={selectedFolderIds}
+          onFolderChange={setSelectedFolderIds}
         />
-      )}
-      <MessageInput
-        onSend={handleSend}
-        onStop={stop}
-        isStreaming={isStreaming}
-        folders={folders}
-        selectedFolderIds={selectedFolderIds}
-        onFolderChange={setSelectedFolderIds}
-      />
+      </div>
       <ArtifactPanel
         citation={selectedCitation}
         onClose={() => setSelectedCitation(null)}

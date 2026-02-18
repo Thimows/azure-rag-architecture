@@ -9,16 +9,12 @@ import {
   FolderOpen,
   ChevronRight,
   Loader2,
+  X,
 } from "lucide-react"
 
 import type { Citation } from "@/lib/types"
 import { trpc } from "@/lib/trpc/client"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -80,17 +76,33 @@ export function ArtifactPanel({ citation, onClose }: ArtifactPanelProps) {
 
   const displayName = citation ? getFileName(citation.documentName) : ""
 
+  const isOpen = !!citation
+
   return (
-    <Sheet open={!!citation} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2 text-base">
-            <FileIcon name={displayName} fileType={citation?.fileType} />
-            <span className="truncate">{displayName}</span>
-          </SheetTitle>
-        </SheetHeader>
-        {citation && (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4">
+    <aside
+      className={`flex h-full shrink-0 flex-col overflow-hidden border-l bg-background transition-[width] duration-300 ease-in-out ${isOpen ? "w-[480px]" : "w-0 border-l-0"}`}
+    >
+      {citation && (
+        <>
+          {/* Header */}
+          <div className="flex w-[480px] items-center gap-2 border-b px-4 py-3">
+            <FileIcon name={displayName} fileType={citation.fileType} />
+            <span className="min-w-0 flex-1 truncate text-base font-semibold">
+              {displayName}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 shrink-0"
+              onClick={onClose}
+            >
+              <X className="size-4" />
+              <span className="sr-only">Close</span>
+            </Button>
+          </div>
+
+          {/* Content */}
+          <div className="flex min-h-0 w-[480px] flex-1 flex-col gap-4 px-4 py-4">
             {/* Metadata badges */}
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">Source [{citation.number}]</Badge>
@@ -116,6 +128,7 @@ export function ArtifactPanel({ citation, onClose }: ArtifactPanelProps) {
                     </div>
                   ) : viewUrlData?.url ? (
                     <PdfViewer
+                      key={`${citation.documentId}-${citation.pageNumber}`}
                       url={viewUrlData.url}
                       initialPage={citation.pageNumber}
                     />
@@ -146,8 +159,8 @@ export function ArtifactPanel({ citation, onClose }: ArtifactPanelProps) {
               </Collapsible>
             </ScrollArea>
           </div>
-        )}
-      </SheetContent>
-    </Sheet>
+        </>
+      )}
+    </aside>
   )
 }
