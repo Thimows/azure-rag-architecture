@@ -24,29 +24,32 @@ flowchart TB
         direction TB
 
         subgraph ingestion["Ingestion Pipeline"]
-            blob["Azure Blob Storage\ndocument store"]
-            docint["Document Intelligence\nPDF & DOCX parsing"]
-            databricks["Azure Databricks\nparse · chunk · embed"]
+            blob["Azure Blob Storage<br>document store"]
+            docint["Document Intelligence<br>PDF & DOCX parsing"]
+            databricks["Azure Databricks<br>parse · chunk · embed"]
         end
 
         subgraph retrieval ["Retrieval & Generation"]
-            search["Azure AI Search\nvector + keyword + semantic"]
-            foundry["Azure AI Foundry\nMistral Large 3 · GPT-5 Nano\ntext-embedding-3-large"]
+            search["Azure AI Search<br>vector + keyword + semantic"]
+            foundry["Azure AI Foundry<br>Mistral Large 3 · GPT-5 Nano<br>text-embedding-3-large"]
         end
 
         subgraph application ["Application Layer"]
-            next["Next.js\nchat UI · streaming · citations"]
-            fastapi["FastAPI\nquery rewrite · reranking · generation"]
+            next["Next.js<br>chat UI · streaming · citations"]
+            fastapi["FastAPI<br>query rewrite · reranking · generation"]
+            pg[("Azure PostgreSQL<br>auth · chat history · documents")]
         end
     end
 
-    docs["Documents\nPDF · Word · TXT"] --> blob
+    docs["Documents<br>PDF · Word · TXT"] --> blob
     blob --> databricks
     databricks <--> docint
     databricks --> search
+    databricks -.->|status updates| pg
     next <--> fastapi
     fastapi <--> search
     fastapi <--> foundry
+    fastapi <--> pg
 ```
 
 ## Key Features
