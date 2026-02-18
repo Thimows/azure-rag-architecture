@@ -113,16 +113,25 @@ All strategies use `tiktoken` with `cl100k_base` encoding for token counting. To
 - Three metrics: faithfulness, relevance, completeness
 - Automated evaluation against a curated test set
 
-<!-- TODO: Add evaluation benchmark results -->
-<!--
 ## Benchmarks
 
-| Metric | Score |
-|--------|-------|
-| Faithfulness | - |
-| Relevance | - |
-| Completeness | - |
--->
+Evaluated against 21 questions across SEC 10-K filings using an LLM-as-judge (Mistral Large 3). Each question is scored 0-10 on three metrics. Two configurations compared: hybrid search only (baseline) vs hybrid search + Azure semantic ranker.
+
+**Small corpus (10 documents)**
+
+| Config | Faithfulness | Relevance | Completeness | Average | Latency |
+|--------|-------------|-----------|--------------|---------|---------|
+| Baseline | 9.9 | 10.0 | 8.7 | 9.5 | 2490ms |
+| Semantic | 9.0 | 9.6 | 8.5 | 9.1 | 2769ms |
+
+**Large corpus (~1,200 documents)**
+
+| Config | Faithfulness | Relevance | Completeness | Average | Latency |
+|--------|-------------|-----------|--------------|---------|---------|
+| Baseline | 7.2 | 7.8 | 6.5 | 7.2 | 2134ms |
+| Semantic | 9.1 | 9.5 | 8.8 | 9.1 | 2689ms |
+
+With few documents, hybrid search alone is accurate enough - the semantic ranker adds latency without improvement. At scale, retrieval gets noisier and the semantic ranker (cross-encoder reranking) makes a significant difference, improving average scores by +1.9 for ~500ms extra latency.
 
 ## Tech Stack
 
