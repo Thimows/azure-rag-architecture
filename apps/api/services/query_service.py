@@ -4,6 +4,7 @@ import logging
 
 from azure.ai.inference.models import SystemMessage, UserMessage
 
+from config.settings import settings
 from models.chat_models import ConversationMessage
 from utils.azure_clients import get_rewrite_client
 
@@ -36,8 +37,7 @@ def rewrite_query(
 
     client = get_rewrite_client()
 
-    # Only include the last few turns for context
-    recent = conversation_history[-6:]
+    recent = conversation_history[-(settings.MAX_HISTORY_TURNS * 2):]
     history_text = "\n".join(
         f"{msg.role}: {msg.content[:200]}" for msg in recent
     )
