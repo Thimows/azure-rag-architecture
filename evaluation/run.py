@@ -208,7 +208,7 @@ def print_summary(results: list[dict], configs: list[tuple[str, dict]]) -> None:
         c = avg(s["completeness"])
         a = (f + r + c) / 3
         latency = avg(s["total_ms"])
-        print(f"{cfg_name:<16} {f:>10.1f} {r:>10.1f} {c:>10.1f} {a:>10.1f} {latency/1000:>10.1f}s")
+        print(f"{cfg_name:<16} {f:>10.1f} {r:>10.1f} {c:>10.1f} {a:>10.1f} {latency:>10.0f}ms")
 
     print("=" * 90)
     print()
