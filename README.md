@@ -4,8 +4,7 @@ A production-grade Retrieval-Augmented Generation system built for enterprise en
 
 The entire stack runs inside a single Azure tenant — compute, storage, AI models and data pipelines. No external API calls, no third-party logging, no data leaving your private environment.
 
-<!-- TODO: Add screenshot of the chat interface -->
-<!-- ![Chat Interface](docs/assets/chat-interface.png) -->
+![Chat Interface](assets/app-preview.png)
 
 ## What This Does
 
@@ -13,8 +12,7 @@ Users upload internal documents (PDF, Word, TXT) which get parsed, chunked and e
 
 Every answer includes numbered citation bubbles that link back to the exact source. Hovering a citation highlights the relevant text and shows a tooltip with the source document and page. Clicking opens an artifact panel with a document viewer scrolled to the cited passage.
 
-<!-- TODO: Add screenshot/gif of citation interaction -->
-<!-- ![Citations](docs/assets/citations.png) -->
+![Citations](assets/citations.png)
 
 ## Architecture
 
