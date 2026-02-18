@@ -141,7 +141,7 @@ AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=$(get_output document_intelligence_endpoint
 
 CORS_ORIGINS=["http://localhost:4000"]
 
-DATABASE_URL=postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=require
+DATABASE_URL=postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=verify-full
 EOF
 ok "Created apps/api/.env"
 
@@ -149,7 +149,7 @@ ok "Created apps/api/.env"
 BETTER_AUTH_SECRET=$(openssl rand -hex 32)
 cat > "$ROOT_DIR/apps/web/.env.local" <<EOF
 NEXT_PUBLIC_API_URL=http://localhost:4001/api/v1
-DATABASE_URL=postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=require
+DATABASE_URL=postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=verify-full
 BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
 BETTER_AUTH_URL=http://localhost:4000
 AZURE_STORAGE_ACCOUNT_NAME=$(get_output storage_account_name)
@@ -160,7 +160,7 @@ ok "Created apps/web/.env.local"
 # ─── Step 3: Push database schema ─────────────────────────────────
 info "Step 3/6 — Pushing database schema..."
 cd "$ROOT_DIR/apps/web"
-DB_URL="postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=require"
+DB_URL="postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=verify-full"
 DATABASE_URL="$DB_URL" npx drizzle-kit push < /dev/null
 ok "Database schema up to date"
 
@@ -217,7 +217,7 @@ put_secret "azure-search-index-name"            "rag-index"
 put_secret "azure-storage-connection-string"    "$(get_output storage_connection_string)"
 put_secret "document-intelligence-endpoint"     "$(get_output document_intelligence_endpoint)"
 put_secret "document-intelligence-key"          "$(get_output document_intelligence_key)"
-put_secret "DATABASE_URL"                       "postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=require"
+put_secret "DATABASE_URL"                       "postgresql://$(get_output postgresql_user):$(get_output postgresql_password)@$(get_output postgresql_host):5432/$(get_output postgresql_database)?sslmode=verify-full"
 
 ok "All 11 secrets configured"
 
