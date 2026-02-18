@@ -12,6 +12,10 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // refresh token every 24 hours
+    cookieCache: { enabled: true, maxAge: 60 * 5 },
+  },
+  advanced: {
+    cookiePrefix: "rag",
   },
   databaseHooks: {
     session: {

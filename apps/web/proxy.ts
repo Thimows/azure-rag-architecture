@@ -13,7 +13,7 @@ export function proxy(request: NextRequest) {
 
   // Check for BetterAuth session cookie
   const sessionToken =
-    request.cookies.get("better-auth.session_token")?.value
+    request.cookies.get("rag.session_token")?.value
 
   if (!sessionToken) {
     return NextResponse.redirect(new URL("/sign-in", request.url))

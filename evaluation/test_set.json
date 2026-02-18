@@ -1,14 +1,14 @@
 {
   "metadata": {
-    "description": "Evaluation test set for Enterprise RAG Architecture. Questions are based on 10-K annual filings from Apple, Tesla, and Microsoft.",
+    "description": "Evaluation test set for Enterprise RAG Architecture. Questions are based on Q1 2025 Form 10-Q filings from Apple, Tesla, and Netflix.",
     "documents": [
-      "apple_10k_2024.pdf",
-      "tesla_10k_2024.pdf",
-      "microsoft_10k_2024.pdf"
+      "apple-10k-q1.pdf",
+      "tesla-10k-q1.pdf",
+      "netflix-10k-q1.pdf"
     ],
     "categories": {
-      "factual_lookup": "Single fact retrieval from one document (revenue, headcount, dates)",
-      "tabular_data": "Answer requires reading a table or financial statement",
+      "factual_lookup": "Single fact retrieval from one document (revenue, net income, shares outstanding)",
+      "tabular_data": "Answer requires reading a financial table or statement",
       "multi_section": "Answer spans multiple sections within one document",
       "cross_document": "Answer requires information from two or more documents",
       "multi_hop": "Answer requires combining multiple facts to derive a conclusion",
@@ -19,66 +19,192 @@
   "questions": [
     {
       "id": "q01",
-      "question": "What was Apple's total net revenue for fiscal year 2024?",
+      "question": "What were Apple’s total net sales for the quarter ended March 29, 2025?",
       "category": "factual_lookup",
-      "expected_answer": "Apple's total net revenue for fiscal year 2024 was $391.0 billion.",
-      "source_documents": ["apple_10k_2024.pdf"],
-      "source_pages": [42],
-      "notes": "Exact figure from the Consolidated Statements of Operations."
+      "expected_answer": "Apple’s total net sales for the quarter ended March 29, 2025 were $95,359 million.",
+      "source_documents": ["apple-10k-q1.pdf"],
+      "source_pages": [4],
+      "notes": "Condensed Consolidated Statements of Operations."
     },
     {
       "id": "q02",
-      "question": "What risk factors does Tesla list related to supply chain disruptions?",
-      "category": "risk_factors",
-      "expected_answer": "Tesla identifies supply chain risks including dependency on single-source suppliers for key components, global semiconductor shortages, and vulnerability to geopolitical disruptions affecting raw material availability (lithium, nickel, cobalt).",
-      "source_documents": ["tesla_10k_2024.pdf"],
-      "source_pages": [15, 16],
-      "notes": "Risk Factors section, typically Item 1A."
+      "question": "What was Tesla’s net income attributable to common stockholders for the three months ended March 31, 2025?",
+      "category": "factual_lookup",
+      "expected_answer": "Tesla’s net income attributable to common stockholders was $409 million for the three months ended March 31, 2025.",
+      "source_documents": ["tesla-10k-q1.pdf"],
+      "source_pages": [5],
+      "notes": "Consolidated Statements of Operations."
     },
     {
       "id": "q03",
-      "question": "How does Microsoft's revenue break down by segment, and which segment is the largest?",
-      "category": "tabular_data",
-      "expected_answer": "Microsoft reports three segments: Intelligent Cloud (including Azure), Productivity and Business Processes (including Office and LinkedIn), and More Personal Computing (including Windows and Xbox). Intelligent Cloud is the largest segment.",
-      "source_documents": ["microsoft_10k_2024.pdf"],
-      "source_pages": [38, 39],
-      "notes": "Segment revenue table in Item 7 or financial statements."
+      "question": "How many shares of Apple common stock were outstanding as of April 18, 2025?",
+      "category": "factual_lookup",
+      "expected_answer": "14,935,826,000 shares of Apple common stock were outstanding as of April 18, 2025.",
+      "source_documents": ["apple-10k-q1.pdf"],
+      "source_pages": [2],
+      "notes": "Cover page disclosure."
     },
     {
       "id": "q04",
-      "question": "Which company spent the most on research and development in absolute terms — Apple, Tesla, or Microsoft?",
-      "category": "cross_document",
-      "expected_answer": "Microsoft spent the most on R&D, followed by Apple and then Tesla. The answer should cite specific dollar amounts from each company's income statement.",
-      "source_documents": ["apple_10k_2024.pdf", "tesla_10k_2024.pdf", "microsoft_10k_2024.pdf"],
-      "source_pages": [],
-      "notes": "Requires retrieving R&D expense from all three 10-K filings and comparing."
+      "question": "Break down Apple’s net sales by product category for the quarter ended March 29, 2025.",
+      "category": "tabular_data",
+      "expected_answer": "iPhone $46,841M; Mac $7,949M; iPad $6,402M; Wearables, Home and Accessories $7,522M; Services $26,645M.",
+      "source_documents": ["apple-10k-q1.pdf"],
+      "source_pages": [9],
+      "notes": "Revenue disaggregation table in Note 2."
     },
     {
       "id": "q05",
-      "question": "What was Tesla's gross margin percentage, and how did it change compared to the prior year?",
-      "category": "multi_section",
-      "expected_answer": "The answer should include Tesla's gross margin for the current and prior fiscal year, the direction of change, and ideally the key drivers (e.g., price reductions, cost efficiencies, energy credit revenue).",
-      "source_documents": ["tesla_10k_2024.pdf"],
-      "source_pages": [],
-      "notes": "Requires both the financial statements and the MD&A discussion of margin drivers."
+      "question": "What were Tesla’s total revenues and total cost of revenues for Q1 2025?",
+      "category": "tabular_data",
+      "expected_answer": "Total revenues were $19,335 million and total cost of revenues were $16,182 million.",
+      "source_documents": ["tesla-10k-q1.pdf"],
+      "source_pages": [5],
+      "notes": "Consolidated Statements of Operations."
     },
     {
       "id": "q06",
-      "question": "What is Amazon's annual cloud computing revenue?",
-      "category": "unanswerable",
-      "expected_answer": "This question cannot be answered from the provided documents. The document collection only contains 10-K filings from Apple, Tesla, and Microsoft — Amazon's financials are not included.",
-      "source_documents": [],
-      "source_pages": [],
-      "notes": "Amazon is not in the document set. The system should clearly state it cannot answer rather than hallucinating."
+      "question": "What were Netflix’s Q1 2025 revenue, operating income, and operating margin?",
+      "category": "tabular_data",
+      "expected_answer": "Revenue was $10,543 million, operating income was $3,347 million, and operating margin was 31.7%.",
+      "source_documents": ["netflix-10k-q1.pdf"],
+      "source_pages": [1],
+      "notes": "Summary results table in shareholder letter."
     },
     {
       "id": "q07",
-      "question": "Comparing Apple and Microsoft, which company has a higher operating income margin, and what are the main drivers of the difference?",
+      "question": "How did Tesla’s automotive revenue components contribute to total automotive revenues in Q1 2025?",
+      "category": "multi_section",
+      "expected_answer": "Automotive sales were $12,925M, regulatory credits $595M, and automotive leasing $447M, totaling $13,967M in automotive revenues.",
+      "source_documents": ["tesla-10k-q1.pdf"],
+      "source_pages": [5, 9],
+      "notes": "Requires revenue table and revenue disaggregation note."
+    },
+    {
+      "id": "q08",
+      "question": "How does Apple describe the expected timing of recognition of its deferred revenue as of March 29, 2025?",
+      "category": "multi_section",
+      "expected_answer": "As of March 29, 2025, Apple had $13.6B in deferred revenue and expects 66% to be realized in less than a year, 24% within one to two years, 9% within two to three years, and 1% thereafter.",
+      "source_documents": ["apple-10k-q1.pdf"],
+      "source_pages": [9],
+      "notes": "Note 2 revenue disclosure."
+    },
+    {
+      "id": "q09",
+      "question": "What capital allocation priorities does Netflix outline and how were they reflected in Q1 2025 cash usage?",
+      "category": "multi_section",
+      "expected_answer": "Netflix prioritizes reinvesting in the business, maintaining liquidity, and returning excess cash via share repurchases. In Q1 2025 it generated $2.8B operating cash flow and repurchased 3.7M shares for $3.5B.",
+      "source_documents": ["netflix-10k-q1.pdf"],
+      "source_pages": [6],
+      "notes": "Cash Flow and Capital Structure section."
+    },
+    {
+      "id": "q10",
+      "question": "Comparing Apple and Tesla, which company generated higher net income in the most recent reported quarter?",
+      "category": "cross_document",
+      "expected_answer": "Apple generated higher net income at $24,780M compared to Tesla’s $420M for their respective most recent quarters.",
+      "source_documents": ["apple-10k-q1.pdf", "tesla-10k-q1.pdf"],
+      "source_pages": [4, 5],
+      "notes": "Requires retrieving net income from both filings."
+    },
+    {
+      "id": "q11",
+      "question": "Which company reported higher operating margin in Q1 2025, Apple or Netflix?",
+      "category": "cross_document",
+      "expected_answer": "Netflix reported an operating margin of 31.7% while Apple’s operating margin was approximately 31.0% (29,589 operating income on 95,359 revenue), making Netflix slightly higher.",
+      "source_documents": ["apple-10k-q1.pdf", "netflix-10k-q1.pdf"],
+      "source_pages": [4, 1],
+      "notes": "Requires margin calculation for Apple and comparison."
+    },
+    {
+      "id": "q12",
+      "question": "Which company held more cash and cash equivalents at quarter end, Apple or Tesla?",
+      "category": "cross_document",
+      "expected_answer": "Apple held $28,162M in cash and cash equivalents versus Tesla’s $16,352M, so Apple held more.",
+      "source_documents": ["apple-10k-q1.pdf", "tesla-10k-q1.pdf"],
+      "source_pages": [6, 4],
+      "notes": "Balance sheet comparison."
+    },
+    {
+      "id": "q13",
+      "question": "What percentage of Apple’s Q1 2025 total net sales came from Services?",
       "category": "multi_hop",
-      "expected_answer": "The answer should calculate operating income as a percentage of revenue for both companies, identify which is higher, and explain the drivers (e.g., Apple's hardware vs. Microsoft's cloud/software mix, differences in cost structure).",
-      "source_documents": ["apple_10k_2024.pdf", "microsoft_10k_2024.pdf"],
+      "expected_answer": "Services revenue was $26,645M out of $95,359M total net sales, approximately 28% of total revenue.",
+      "source_documents": ["apple-10k-q1.pdf"],
+      "source_pages": [4, 9],
+      "notes": "Requires division of Services by total net sales."
+    },
+    {
+      "id": "q14",
+      "question": "What was Tesla’s gross margin percentage for Q1 2025?",
+      "category": "multi_hop",
+      "expected_answer": "Gross profit was $3,153M on revenue of $19,335M, implying a gross margin of approximately 16.3%.",
+      "source_documents": ["tesla-10k-q1.pdf"],
+      "source_pages": [5],
+      "notes": "Requires calculation from income statement."
+    },
+    {
+      "id": "q15",
+      "question": "By how much did Netflix’s operating income increase year over year in Q1 2025?",
+      "category": "multi_hop",
+      "expected_answer": "Operating income increased from $2,633M in Q1 2024 to $3,347M in Q1 2025, an increase of $714M.",
+      "source_documents": ["netflix-10k-q1.pdf"],
+      "source_pages": [1],
+      "notes": "Requires subtraction of prior year figure."
+    },
+    {
+      "id": "q16",
+      "question": "What was Amazon’s total revenue for Q1 2025?",
+      "category": "unanswerable",
+      "expected_answer": "This question cannot be answered from the provided documents because they only include Apple, Tesla, and Netflix filings.",
+      "source_documents": [],
       "source_pages": [],
-      "notes": "Requires computing margins from financial data and reasoning about cost structures from MD&A."
+      "notes": "Amazon is not part of the document set."
+    },
+    {
+      "id": "q17",
+      "question": "What was Microsoft’s cloud revenue for the quarter?",
+      "category": "unanswerable",
+      "expected_answer": "This question cannot be answered from the provided documents because Microsoft’s filings are not included.",
+      "source_documents": [],
+      "source_pages": [],
+      "notes": "Tests hallucination resistance."
+    },
+    {
+      "id": "q18",
+      "question": "What is Tesla’s projected vehicle delivery volume for full year 2025?",
+      "category": "unanswerable",
+      "expected_answer": "The provided Q1 2025 Form 10-Q does not disclose projected full-year vehicle delivery volume.",
+      "source_documents": ["tesla-10k-q1.pdf"],
+      "source_pages": [],
+      "notes": "No forward delivery forecast disclosed."
+    },
+    {
+      "id": "q19",
+      "question": "How does Tesla describe forward-looking statements and associated risks in its Q1 2025 filing?",
+      "category": "risk_factors",
+      "expected_answer": "Tesla states that forward-looking statements are based on assumptions, involve risks and uncertainties, are not guarantees, and may differ materially due to risks described in Item 1A Risk Factors and other SEC filings.",
+      "source_documents": ["tesla-10k-q1.pdf"],
+      "source_pages": [3],
+      "notes": "Forward-Looking Statements section."
+    },
+    {
+      "id": "q20",
+      "question": "What caution does Apple provide regarding the use of management estimates in its financial statements?",
+      "category": "risk_factors",
+      "expected_answer": "Apple states that preparation of financial statements in conformity with GAAP requires management estimates and that actual results could differ from those estimates.",
+      "source_documents": ["apple-10k-q1.pdf"],
+      "source_pages": [9],
+      "notes": "Basis of Presentation and Preparation note."
+    },
+    {
+      "id": "q21",
+      "question": "What risks does Netflix mention related to foreign exchange movements in its Q1 2025 letter?",
+      "category": "risk_factors",
+      "expected_answer": "Netflix notes that foreign exchange movements can impact reported revenue growth and operating margin, and references F/X neutral metrics and potential effects of currency fluctuations.",
+      "source_documents": ["netflix-10k-q1.pdf"],
+      "source_pages": [2],
+      "notes": "Discussion of F/X impact in Q1 results section."
     }
   ]
 }
