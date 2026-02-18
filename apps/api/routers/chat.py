@@ -8,7 +8,12 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from config.settings import settings
-from models.chat_models import ChatQueryResponse, ChatRequest
+from models.chat_models import (
+    ChatQueryResponse,
+    ChatRequest,
+    RetrievedChunk,
+    TimingBreakdown,
+)
 from services.generation_service import generate_answer, generate_answer_streaming
 from services.query_service import rewrite_query
 from services.reranking_service import rerank_chunks
@@ -43,6 +48,10 @@ async def chat_stream(request: ChatRequest):
             headers=SSE_HEADERS,
         )
 
+    # Resolve per-request overrides (fall back to server defaults)
+    use_semantic = request.use_semantic_search if request.use_semantic_search is not None else True
+    use_reranking = request.use_custom_reranker if request.use_custom_reranker is not None else settings.RERANKING_ENABLED
+
     # 3. Embed + search
     query_vector = await asyncio.to_thread(embed_query, rewritten_query)
     t_embed = time.perf_counter()
@@ -56,12 +65,13 @@ async def chat_stream(request: ChatRequest):
         settings.SEARCH_TOP_K,
         request.filters.folder_ids or None,
         request.filters.document_names or None,
+        use_semantic,
     )
     t_search = time.perf_counter()
     logger.info("[TIMING] hybrid search: %.2fs (%d chunks)", t_search - t_embed, len(chunks))
 
     # 4. Rerank if enabled (and we have results)
-    if chunks and settings.RERANKING_ENABLED:
+    if chunks and use_reranking:
         chunks = await asyncio.to_thread(
             rerank_chunks, rewritten_query, chunks, request.top_k
         )
@@ -95,11 +105,18 @@ async def chat_query(request: ChatRequest):
     t_rewrite = time.perf_counter()
     logger.info("[TIMING] rewrite: %.2fs (conversational=%s)", t_rewrite - t_start, is_conversational)
 
+    # Resolve per-request overrides (fall back to server defaults)
+    use_semantic = request.use_semantic_search if request.use_semantic_search is not None else True
+    use_reranking = request.use_custom_reranker if request.use_custom_reranker is not None else settings.RERANKING_ENABLED
+
+    timing = TimingBreakdown(rewrite_ms=round((t_rewrite - t_start) * 1000, 1))
+
     chunks = []
     if not is_conversational:
         # 2. Embed the rewritten query
         query_vector = await asyncio.to_thread(embed_query, rewritten_query)
         t_embed = time.perf_counter()
+        timing.embed_ms = round((t_embed - t_rewrite) * 1000, 1)
         logger.info("[TIMING] embed: %.2fs", t_embed - t_rewrite)
 
         # 3. Hybrid search (always scoped by organization_id)
@@ -111,16 +128,19 @@ async def chat_query(request: ChatRequest):
             settings.SEARCH_TOP_K,
             request.filters.folder_ids or None,
             request.filters.document_names or None,
+            use_semantic,
         )
         t_search = time.perf_counter()
+        timing.search_ms = round((t_search - t_embed) * 1000, 1)
         logger.info("[TIMING] hybrid search: %.2fs (%d chunks)", t_search - t_embed, len(chunks))
 
         # 4. Rerank if enabled (and we have results)
-        if chunks and settings.RERANKING_ENABLED:
+        if chunks and use_reranking:
             chunks = await asyncio.to_thread(
                 rerank_chunks, rewritten_query, chunks, request.top_k
             )
             t_rerank = time.perf_counter()
+            timing.rerank_ms = round((t_rerank - t_search) * 1000, 1)
             logger.info("[TIMING] rerank: %.2fs", t_rerank - t_search)
         elif chunks:
             chunks = chunks[: request.top_k]
@@ -132,11 +152,26 @@ async def chat_query(request: ChatRequest):
         generate_answer, query_for_gen, chunks, request.conversation_history
     )
     t_gen = time.perf_counter()
+    timing.generation_ms = round((t_gen - t_before_gen) * 1000, 1)
+    timing.total_ms = round((t_gen - t_start) * 1000, 1)
     logger.info("[TIMING] generation: %.2fs", t_gen - t_before_gen)
     logger.info("[TIMING] total: %.2fs", t_gen - t_start)
+
+    chunks_used = [
+        RetrievedChunk(
+            document_name=c.document_name,
+            page_number=c.page_number,
+            chunk_text=c.content[:500],
+            search_score=c.search_score,
+            reranker_score=c.reranker_score,
+        )
+        for c in chunks
+    ]
 
     return ChatQueryResponse(
         answer=answer,
         citations=citations,
         query_rewritten=rewritten_query,
+        timing=timing,
+        chunks_used=chunks_used,
     )

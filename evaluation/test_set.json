@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "description": "Evaluation test set for Enterprise RAG Architecture. Questions are based on 10-K annual filings from Apple, Tesla, and Microsoft.",
+    "documents": [
+      "apple_10k_2024.pdf",
+      "tesla_10k_2024.pdf",
+      "microsoft_10k_2024.pdf"
+    ],
+    "categories": {
+      "factual_lookup": "Single fact retrieval from one document (revenue, headcount, dates)",
+      "tabular_data": "Answer requires reading a table or financial statement",
+      "multi_section": "Answer spans multiple sections within one document",
+      "cross_document": "Answer requires information from two or more documents",
+      "multi_hop": "Answer requires combining multiple facts to derive a conclusion",
+      "unanswerable": "The answer is NOT in the provided documents — tests hallucination resistance",
+      "risk_factors": "Questions about risk disclosures and forward-looking statements"
+    }
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "question": "What was Apple's total net revenue for fiscal year 2024?",
+      "category": "factual_lookup",
+      "expected_answer": "Apple's total net revenue for fiscal year 2024 was $391.0 billion.",
+      "source_documents": ["apple_10k_2024.pdf"],
+      "source_pages": [42],
+      "notes": "Exact figure from the Consolidated Statements of Operations."
+    },
+    {
+      "id": "q02",
+      "question": "What risk factors does Tesla list related to supply chain disruptions?",
+      "category": "risk_factors",
+      "expected_answer": "Tesla identifies supply chain risks including dependency on single-source suppliers for key components, global semiconductor shortages, and vulnerability to geopolitical disruptions affecting raw material availability (lithium, nickel, cobalt).",
+      "source_documents": ["tesla_10k_2024.pdf"],
+      "source_pages": [15, 16],
+      "notes": "Risk Factors section, typically Item 1A."
+    },
+    {
+      "id": "q03",
+      "question": "How does Microsoft's revenue break down by segment, and which segment is the largest?",
+      "category": "tabular_data",
+      "expected_answer": "Microsoft reports three segments: Intelligent Cloud (including Azure), Productivity and Business Processes (including Office and LinkedIn), and More Personal Computing (including Windows and Xbox). Intelligent Cloud is the largest segment.",
+      "source_documents": ["microsoft_10k_2024.pdf"],
+      "source_pages": [38, 39],
+      "notes": "Segment revenue table in Item 7 or financial statements."
+    },
+    {
+      "id": "q04",
+      "question": "Which company spent the most on research and development in absolute terms — Apple, Tesla, or Microsoft?",
+      "category": "cross_document",
+      "expected_answer": "Microsoft spent the most on R&D, followed by Apple and then Tesla. The answer should cite specific dollar amounts from each company's income statement.",
+      "source_documents": ["apple_10k_2024.pdf", "tesla_10k_2024.pdf", "microsoft_10k_2024.pdf"],
+      "source_pages": [],
+      "notes": "Requires retrieving R&D expense from all three 10-K filings and comparing."
+    },
+    {
+      "id": "q05",
+      "question": "What was Tesla's gross margin percentage, and how did it change compared to the prior year?",
+      "category": "multi_section",
+      "expected_answer": "The answer should include Tesla's gross margin for the current and prior fiscal year, the direction of change, and ideally the key drivers (e.g., price reductions, cost efficiencies, energy credit revenue).",
+      "source_documents": ["tesla_10k_2024.pdf"],
+      "source_pages": [],
+      "notes": "Requires both the financial statements and the MD&A discussion of margin drivers."
+    },
+    {
+      "id": "q06",
+      "question": "What is Amazon's annual cloud computing revenue?",
+      "category": "unanswerable",
+      "expected_answer": "This question cannot be answered from the provided documents. The document collection only contains 10-K filings from Apple, Tesla, and Microsoft — Amazon's financials are not included.",
+      "source_documents": [],
+      "source_pages": [],
+      "notes": "Amazon is not in the document set. The system should clearly state it cannot answer rather than hallucinating."
+    },
+    {
+      "id": "q07",
+      "question": "Comparing Apple and Microsoft, which company has a higher operating income margin, and what are the main drivers of the difference?",
+      "category": "multi_hop",
+      "expected_answer": "The answer should calculate operating income as a percentage of revenue for both companies, identify which is higher, and explain the drivers (e.g., Apple's hardware vs. Microsoft's cloud/software mix, differences in cost structure).",
+      "source_documents": ["apple_10k_2024.pdf", "microsoft_10k_2024.pdf"],
+      "source_pages": [],
+      "notes": "Requires computing margins from financial data and reasoning about cost structures from MD&A."
+    }
+  ]
+}

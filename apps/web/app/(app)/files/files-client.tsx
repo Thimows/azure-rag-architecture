@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { trpc } from "@/lib/trpc/client"
 import { useHeader } from "@/components/header-context"
 import { FolderList } from "@/components/files/folder-list"
@@ -11,8 +12,15 @@ import { deleteDocument } from "@/lib/api-client"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 
-export function FilesClient({ organizationId }: { organizationId: string }) {
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
+export function FilesClient({
+  organizationId,
+  folderId,
+}: {
+  organizationId: string
+  folderId?: string
+}) {
+  const selectedFolder = folderId ?? null
+  const router = useRouter()
   const utils = trpc.useUtils()
   const { setTitle, setActions } = useHeader()
 
@@ -48,7 +56,7 @@ export function FilesClient({ organizationId }: { organizationId: string }) {
       <FolderCreateDialog
         onCreated={(id) => {
           utils.folder.list.invalidate()
-          setSelectedFolder(id)
+          router.push(`/files/${id}`)
         }}
       />,
     )
@@ -56,10 +64,10 @@ export function FilesClient({ organizationId }: { organizationId: string }) {
       setTitle("Enterprise RAG")
       setActions(null)
     }
-  }, [setTitle, setActions, utils.folder.list])
+  }, [setTitle, setActions, utils.folder.list, router])
 
   function handleDeleteFolder(id: string) {
-    if (selectedFolder === id) setSelectedFolder(null)
+    if (selectedFolder === id) router.push("/files")
     deleteFolder.mutate({ id })
   }
 
@@ -90,7 +98,7 @@ export function FilesClient({ organizationId }: { organizationId: string }) {
             <FolderList
               folders={folders ?? []}
               selectedId={selectedFolder}
-              onSelect={setSelectedFolder}
+              onSelect={(id) => router.push(`/files/${id}`)}
               onDelete={handleDeleteFolder}
             />
           )}

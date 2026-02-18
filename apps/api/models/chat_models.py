@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -19,6 +21,9 @@ class ChatRequest(BaseModel):
     conversation_history: list[ConversationMessage] = Field(default_factory=list)
     filters: ChatFilters = Field(default_factory=ChatFilters)
     top_k: int = 10
+    # Per-request overrides for evaluation — None means use server defaults
+    use_custom_reranker: Optional[bool] = None
+    use_semantic_search: Optional[bool] = None
 
 
 class SearchChunk(BaseModel):
@@ -63,7 +68,26 @@ class Citation(BaseModel):
     folder_id: str = ""
 
 
+class TimingBreakdown(BaseModel):
+    rewrite_ms: float = 0
+    embed_ms: float = 0
+    search_ms: float = 0
+    rerank_ms: float = 0
+    generation_ms: float = 0
+    total_ms: float = 0
+
+
+class RetrievedChunk(BaseModel):
+    document_name: str
+    page_number: int
+    chunk_text: str
+    search_score: float = 0.0
+    reranker_score: float = 0.0
+
+
 class ChatQueryResponse(BaseModel):
     answer: str
     citations: list[Citation]
     query_rewritten: str
+    timing: Optional[TimingBreakdown] = None
+    chunks_used: list[RetrievedChunk] = Field(default_factory=list)

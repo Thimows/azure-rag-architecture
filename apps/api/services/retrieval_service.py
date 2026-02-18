@@ -24,6 +24,7 @@ def hybrid_search(
     top_k: int | None = None,
     folder_ids: list[str] | None = None,
     document_names: list[str] | None = None,
+    use_semantic: bool = True,
 ) -> list[SearchChunk]:
     """Execute hybrid search (vector + keyword + semantic) against Azure AI Search.
 
@@ -53,19 +54,23 @@ def hybrid_search(
 
     filter_expression = " and ".join(filters)
 
-    results = client.search(
-        search_text=query,
-        vector_queries=[vector_query],
-        query_type=QueryType.SEMANTIC,
-        semantic_configuration_name="semantic-config",
-        top=top_k,
-        filter=filter_expression,
-        select=[
+    search_kwargs: dict = {
+        "search_text": query,
+        "vector_queries": [vector_query],
+        "top": top_k,
+        "filter": filter_expression,
+        "select": [
             "id", "content", "document_id", "document_name",
             "document_url", "page_number", "chunk_index", "metadata",
             "organization_id", "folder_id",
         ],
-    )
+    }
+
+    if use_semantic:
+        search_kwargs["query_type"] = QueryType.SEMANTIC
+        search_kwargs["semantic_configuration_name"] = "semantic-config"
+
+    results = client.search(**search_kwargs)
 
     chunks = []
     for result in results:
