@@ -6,6 +6,18 @@ The entire stack runs inside a single Azure tenant -compute, storage, AI models 
 
 ![Chat Interface](assets/app-preview.png)
 
+## Table of Contents
+
+- [What This Does](#what-this-does)
+- [Architecture](#architecture)
+- [Key Features](#key-features)
+- [Benchmarks](#benchmarks)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Deploying to Azure](#deploying-to-azure)
+- [Security](#security)
+
 ## What This Does
 
 Users upload internal documents (PDF, Word, TXT) which get parsed, chunked and embedded through an Azure Databricks pipeline. The system then answers questions about those documents through a chat interface with real-time streaming, inline citations and full source traceability.
