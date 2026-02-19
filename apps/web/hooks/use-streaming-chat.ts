@@ -83,6 +83,29 @@ export function useStreamingChat({
           }
         }
 
+        // If no citation events arrived but the text references [N] markers,
+        // inherit matching citations from the most recent previous assistant message.
+        // This happens when the query is conversational and RAG is skipped — the AI
+        // still references chunks visible in its conversation history context.
+        if (newCitations.length === 0) {
+          const refs = new Set(
+            Array.from(accumulated.matchAll(/\[(\d+)\]/g), (m) =>
+              parseInt(m[1]!, 10),
+            ),
+          )
+          if (refs.size > 0) {
+            for (let i = history.length - 1; i >= 0; i--) {
+              const prev = history[i]!
+              if (prev.role === "assistant" && prev.citations?.length) {
+                for (const c of prev.citations) {
+                  if (refs.has(c.number)) newCitations.push(c)
+                }
+                break
+              }
+            }
+          }
+        }
+
         setMessages([
           ...history,
           { role: "assistant", content: accumulated, citations: newCitations },

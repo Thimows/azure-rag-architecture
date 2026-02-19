@@ -63,6 +63,8 @@ export function CitationBubble({
     block?.classList.remove(HIGHLIGHT_CLASS)
   }, [])
 
+  const displayName = citation ? getFileName(citation.documentName) : null
+
   const bubble = (
     <button
       type="button"
@@ -75,57 +77,59 @@ export function CitationBubble({
     </button>
   )
 
-  if (!citation) return bubble
-
-  const displayName = getFileName(citation.documentName)
-
   return (
     <HoverCard openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>{bubble}</HoverCardTrigger>
       <HoverCardContent side="top" className="w-80 p-3" align="start">
-        <div className="space-y-2">
-          {/* Header: icon + document name */}
-          <div className="flex items-start gap-2">
-            <div className="shrink-0 pt-0.5">
-              <FileIcon name={displayName} fileType={citation.fileType} />
-            </div>
-            <p className="text-sm font-medium leading-tight">
-              {displayName}
-            </p>
-          </div>
-
-          {/* Folder + page badges */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {citation.folderName && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <FolderOpen className="size-3" />
-                <span>{citation.folderName}</span>
+        {citation ? (
+          <div className="space-y-2">
+            {/* Header: icon + document name */}
+            <div className="flex items-start gap-2">
+              <div className="shrink-0 pt-0.5">
+                <FileIcon name={displayName!} fileType={citation.fileType} />
               </div>
+              <p className="text-sm font-medium leading-tight">
+                {displayName}
+              </p>
+            </div>
+
+            {/* Folder + page badges */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {citation.folderName && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <FolderOpen className="size-3" />
+                  <span>{citation.folderName}</span>
+                </div>
+              )}
+              {citation.pageNumber > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                  Page {citation.pageNumber}
+                </Badge>
+              )}
+            </div>
+
+            {/* Snippet */}
+            {citation.chunkText && (
+              <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+                {citation.chunkText}
+              </p>
             )}
-            {citation.pageNumber > 0 && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                Page {citation.pageNumber}
-              </Badge>
-            )}
+
+            {/* View source link */}
+            <button
+              type="button"
+              className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline"
+              onClick={() => onClick?.(citation)}
+            >
+              <ExternalLink className="size-3" />
+              View source
+            </button>
           </div>
-
-          {/* Snippet */}
-          {citation.chunkText && (
-            <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">
-              {citation.chunkText}
-            </p>
-          )}
-
-          {/* View source link */}
-          <button
-            type="button"
-            className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline"
-            onClick={() => onClick?.(citation)}
-          >
-            <ExternalLink className="size-3" />
-            View source
-          </button>
-        </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Source [{number}] — citation data unavailable
+          </p>
+        )}
       </HoverCardContent>
     </HoverCard>
   )

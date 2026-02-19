@@ -9,6 +9,7 @@ import { CitationBubble } from "@/components/citations/citation-bubble"
 interface StreamingMessageProps {
   content: string
   citations: Citation[]
+  fallbackCitations?: Map<number, Citation>
   isComplete?: boolean
   onCitationClick?: (citation: Citation) => void
 }
@@ -16,6 +17,7 @@ interface StreamingMessageProps {
 export function StreamingMessage({
   content,
   citations,
+  fallbackCitations,
   isComplete,
   onCitationClick,
 }: StreamingMessageProps) {
@@ -39,7 +41,9 @@ export function StreamingMessage({
               return <a href={href} {...rest} />
             }
             const number = parseInt(match[1]!, 10)
-            const citation = citations.find((c) => c.number === number)
+            const citation =
+              citations.find((c) => c.number === number) ??
+              fallbackCitations?.get(number)
             return (
               <CitationBubble
                 number={number}

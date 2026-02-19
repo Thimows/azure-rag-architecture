@@ -278,6 +278,16 @@ This project is designed to run locally during development, with all backend ser
 - All other Azure services (AI Foundry, Search, Storage, Document Intelligence) are accessible from within the same tenant
 - No code changes required -the same Next.js and FastAPI apps run as-is on App Service
 
+**Increase model rate limits:**
+
+The default AI Foundry model capacities are set conservatively to fit within most Azure subscription quotas. For production, increase `chat_capacity`, `rewrite_capacity` and `embedding_capacity` in `terraform/terraform.tfvars` based on your expected concurrency. The maximum available capacity depends on your subscription tier and regional quota -check the Azure Portal under AI Foundry > Quota.
+
+| Model | Default | Variable |
+|-------|---------|----------|
+| Chat (Mistral Large 3) | 20K TPM | `chat_capacity` |
+| Query rewrite (GPT-5 Nano) | 30K TPM | `rewrite_capacity` |
+| Embeddings (text-embedding-3-large) | 350K TPM | `embedding_capacity` |
+
 ## Security
 
 Designed for enterprise environments where data privacy and compliance are non-negotiable.

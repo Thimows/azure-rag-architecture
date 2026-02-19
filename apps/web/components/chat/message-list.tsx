@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { MessageBubble } from "@/components/chat/message-bubble"
 import { StreamingMessage } from "@/components/chat/streaming-message"
 import { ThinkingIndicator } from "@/components/chat/thinking-indicator"
@@ -27,6 +27,21 @@ export function MessageList({
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // Build a running map of all citations seen across assistant messages.
+  // Used as fallback for messages that reference previous turn's citations
+  // (e.g. DB-loaded messages stored before citation inheritance was added).
+  const fallbackCitations = useMemo(() => {
+    const map = new Map<number, Citation>()
+    for (const msg of messages) {
+      if (msg.role === "assistant" && msg.citations) {
+        for (const c of msg.citations) {
+          map.set(c.number, c)
+        }
+      }
+    }
+    return map
+  }, [messages])
+
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
@@ -41,6 +56,7 @@ export function MessageList({
               <StreamingMessage
                 content={msg.content}
                 citations={msg.citations ?? []}
+                fallbackCitations={fallbackCitations}
                 isComplete
                 onCitationClick={onCitationClick}
               />
