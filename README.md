@@ -1,4 +1,4 @@
-# Azure RAG Architecture
+# Azure RAG Boilerplate
 
 A production-grade Retrieval-Augmented Generation system built for enterprise environments. Uses Azure AI Foundry (Mistral Large 3 for answer generation, GPT-5 Nano for query rewriting, text-embedding-3-large for embeddings), Azure AI Search for hybrid retrieval and Azure Databricks for automated document ingestion and chunking workflows.
 
